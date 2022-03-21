@@ -1,26 +1,66 @@
-const BASE_MINIONS_PER_FLOOR = 4;
+const BASE_ENEMIES_PER_FLOOR = 4;
 
 const LEFT = 37;
 const UP = 38;
 const RIGHT = 39;
 const DOWN = 40;
 const WAIT = 190;
+
+const ROW = 0;
+const COL = 1;
  
 let level = 0;
 let play = true;
 let map = "no map loaded";
 let player = STATS.Player; 
 let keyPressed = -1;
-
 let enemies = [];
-let residualDamage = 0;
 
 function $(e) {
 	return document.getElementById(e);
 }
 
+function avoidWalls(axis, value) {
+	let mapDimension = map.length - 1;
 
-function drawMap(map) {
+	if (axis == COL) {
+		mapDimension = map[0].length - 1;
+	}
+	
+	if (value == 0) { 
+		return ++value;
+	} else if (value == mapDimension) { 
+		return --value;
+	} else {
+		return value;
+	}
+}
+
+function buildLevel() {
+	//Pick a random level
+	map = LEVELS[random(LEVELS.length)];
+
+	//Wipe slate from previous level
+	for (let i = 0; i < map.length; i++) {
+		for (let j = 0; j < map[0].length; j++) {
+			if (map[i][j] !== WALL) {
+				map[i][j] = FLOOR;
+			}
+		}
+	}
+
+	spawnMonsters();
+
+	spawnShards();
+
+	spawnPlayer();
+
+	spawnExit();
+
+	drawMap(map);
+}
+
+function drawMap() {
 	//Draw the level
 	$("map").innerHTML = "";
 	for (let row = 0; row < map.length; row++) {
@@ -42,108 +82,139 @@ function drawStats() {
 		+ player.SHARDS;
 }
 
-function buildLevel() {
-	//Pick a random level
-	map = LEVELS[Math.floor(Math.random()*LEVELS.length)];
-	enemies = [];	
-	for (let i = 0; i < map.length; i++) {
-		for (let j = 0; j < map[0].length; j++) {
-			if (map[i][j] !== WALL) {
-				map[i][j] = FLOOR;
-			}
-		}
-	}
-	drawMap(map);
+function drawStatus(message) {
+	$("status").innerHTML = message;
+}
 
-	//Spawn monsters
-	let numberMinions = Math.floor(Math.random()*BASE_MINIONS_PER_FLOOR + level);
-	let numberMaxions = Math.floor(Math.random()*level);
-
-	for (let i = 0; i < numberMinions; i++) {
-		let x = Math.floor(Math.random()*map.length);
-		if (x == 0) { x++; };
-		if (x == map.length-1) { x-- };
-		let y = Math.floor(Math.random()*map[0].length);
-		if (y == 0) { y++; };
-		if (y == map[0].length-1) { y-- };
-		map[x][y] = MINION;
-		enemies.push({
-			"X": x,
-			"Y": y,
-			"HP": STATS.Minion.HP,
-			"ATK": STATS.Minion.ATK,
-			"DEF": STATS.Minion.DEF,
-			"RESIDUAL_DAMAGE_PENDING": false,
-			"TYPE": "MINION"
-		});
-	}
-
-	for (let i = 0; i < numberMaxions; i++) {
-		let x = Math.floor(Math.random()*map.length);
-		if (x == 0) { x++; };
-		if (x == map.length-1) { x-- };
-		let y = Math.floor(Math.random()*map[0].length);
-		if (y == 0) { y++; };
-		if (y == map[0].length-1) { y-- };
-		map[x][y] = MAXION;
-		enemies.push({
-			"X": x,
-			"Y": y,
-			"HP": STATS.Maxion.HP,
-			"ATK": STATS.Maxion.ATK,
-			"DEF": STATS.Maxion.DEF,
-			"RESIDUAL_DAMAGE_PENDING": false,
-			"TYPE": "MAXION"
-		});
-	}
-
-	drawMap(map);
-
-	//Draw shards
-	let numberShards = Math.floor(Math.random() * level);
-	if (numberShards == 0) { numberShards = 1 };
-	for (let i = 0; i < numberShards; i++) {
-		let x = Math.floor(Math.random()*map.length);
-		if (x == 0) { x++; };
-		if (x == map.length-1) { x-- };
-		let y = Math.floor(Math.random()*map[0].length);
-		if (y == 0) { y++; };
-		if (y == map[0].length-1) { y-- };
-		map[x][y] = SHARD;
-	}
-
-	drawMap(map);
-
-	//Draw player
-	let x = Math.floor(Math.random()*map.length);
-	if (x == 0) { x++; };
-	if (x == map.length-1) { x-- };
-	let y = Math.floor(Math.random()*map[0].length);
-	if (y == 0) { y++; };
-	if (y == map[0].length-1) { y-- };
-	map[x][y] = PLAYER;
-	player.X = x;
-	player.Y = y;
-
-	drawMap(map);
-
-	//Drop exit (down stairs)
-	let acceptableExit = false;
-	while (!acceptableExit) {
-		let x = Math.floor(Math.random()*map.length);
-		if (x == 0) { x++; };
-		if (x == map.length-1) { x-- };
-		let y = Math.floor(Math.random()*map[0].length);
-		if (y == 0) { y++; };
-		if (y == map[0].length-1) { y-- };
+function enemyAttack(idx) {
+	let enemyHit = Math.floor(Math.random() * 20) > player.DEF;
+	let dmgToPlayer = enemies[idx].ATK + Math.floor(Math.random() * 2);
 	
-		if (map[x][y] !== PLAYER) {
-			map[x][y] = EXIT;		
-			acceptableExit = true;
+	if (enemyHit) {
+		player.HP -= dmgToPlayer;
+	} else {
+		$("status").innerHTML = "The " + enemies[idx].TYPE + " missed!";
+	}
+}
+
+function fight(enemyIdx) {
+	let playerHit = random(20) > enemies[enemyIdx].DEF;
+	let dmgToEnemy = player.ATK + random(2);
+
+	if (playerHit) {
+		enemies[enemyIdx].HP -= dmgToEnemy;
+	} else {
+		$("status").innerHTML = "You missed!";
+	}
+
+	if (enemies[enemyIdx].HP < 1) {
+		movePlayerTo(enemies[enemyIdx].X, enemies[enemyIdx].Y);
+		enemies[enemyIdx].X = -1;
+		enemies[enemyIdx].Y = -1;
+		player.HP++;
+	}
+}
+
+async function game() {
+	level++;
+	buildLevel();
+	
+	while (play) {
+	
+		await waitingKeypress();
+
+		if (keyPressed > 0) {
+			loop();
+		}	
+	}	
+}
+
+function getEnemyAt(x,y) {
+	for (let i = 0; i < enemies.length; i++) {
+		if (enemies[i].X === x && enemies[i].Y === y) {
+			return i;
 		}
 	}
 
+	return -1;
+}
+
+function getRandomCoordinate(axis) {
+	let mapLimit = map.length;
+
+	if (axis == COL) {
+		mapLimit = map[0].length;
+	}
+
+	return avoidWalls(axis, random(mapLimit-1));
+}
+
+function loop() {
+	
+	//Update map and stats
+	drawStatus("");
+	drawStats();
 	drawMap(map);
+
+	//Check to see if player has died
+	if (player.HP < 1) {
+		play = false;
+		$("status").innerHTML = "You died.";
+	}
+
+	//Get coordinates of proposed player move
+	let proposedPlayerX = player.X;
+	let proposedPlayerY = player.Y
+
+	if (keyPressed === LEFT) {
+		proposedPlayerY--;
+	} else if (keyPressed === RIGHT) {
+		proposedPlayerY++;
+	} else if (keyPressed === UP) {
+		proposedPlayerX--;
+	} else if (keyPressed === DOWN) {
+		proposedPlayerX++;
+	}
+
+	//Complete player's move based on what's in the proposed move square
+	if (map[proposedPlayerX][proposedPlayerY] === WALL) {
+	} else if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
+		newLevel();
+	} else if (map[proposedPlayerX][proposedPlayerY] === MINION ||
+		map[proposedPlayerX][proposedPlayerY] === MAXION) {
+		fight(getEnemyAt(proposedPlayerX,proposedPlayerY));
+	} else if (map[proposedPlayerX][proposedPlayerY] === SHARD) {
+		pickupShard();
+		movePlayerTo(proposedPlayerX,proposedPlayerY);
+	} else {
+		movePlayerTo(proposedPlayerX,proposedPlayerY);
+	}
+
+	//Check for enemies next to player; those enemies attack, others move toward player
+	for (let i = 0; i < enemies.length; i++) {
+		if (player.X === enemies[i].X &&
+			(player.Y === enemies[i].Y - 1 
+				|| player.Y === enemies[i].Y + 1)
+
+		|| player.Y === enemies[i].Y &&
+			(player.X === enemies[i].X - 1
+				|| player.X === enemies[i].Y + 1)) {
+			
+			enemyAttack(i);
+		} else {
+			if (player.X - enemies[i].X > 0) {
+				moveEnemyTo(i, enemies[i].X + 1, enemies[i].Y);
+			} else if (player.X - enemies[i].X < 0) {
+				moveEnemyTo(i, enemies[i].X - 1, enemies[i].Y);
+			} else if (player.X - enemies[i].X === 0) {
+				if (player.Y - enemies[i].Y > 0) {
+					moveEnemyTo(i, enemies[i].X, enemies[i].Y + 1);
+				} else if (player.Y - enemies[i].Y < 0) {
+					moveEnemyTo(i, enemies[i].X, enemies[i].Y - 1);
+				}
+			}
+		}	
+	}
 }
 
 function movePlayerTo(x,y) {
@@ -168,175 +239,90 @@ function moveEnemyTo(idx,x,y) {
 	}
 } 
 
-function enemyAttack(idx) {
-	let enemyHit = Math.floor(Math.random() * 20) > player.DEF;
-	let dmgToPlayer = enemies[idx].ATK + Math.floor(Math.random() * 2);
+function newLevel() {
+	level++;
+	buildLevel();
+}
+
+function pickupShard() {
+	player.SHARDS++;
+	player.ATK += level;
+}
+
+function random(value) {
+	return Math.floor(Math.random() * value);
+}
+
+function spawnExit() {
+
+	let acceptableExit = false;
+	while (!acceptableExit) {
+		let x = getRandomCoordinate(ROW);
+		let y = getRandomCoordinate(COL);		
+
+		if (map[x][y] !== PLAYER) {
+			map[x][y] = EXIT;		
+			acceptableExit = true;
+		}
+	}
+}
+
+function spawnMonsters() {
+
+	enemies = [];
+
+	let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + level);
+
+	for (let i = 0; i < numberEnemies; i++) {
+		let x = getRandomCoordinate(ROW);
+		let y = getRandomCoordinate(COL);
+		map[x][y] = MINION;
+		enemies.push({
+			"X": x,
+			"Y": y,
+			"HP": STATS.Minion.HP,
+			"ATK": STATS.Minion.ATK,
+			"DEF": STATS.Minion.DEF,
+			"RESIDUAL_DAMAGE_PENDING": false,
+			"TYPE": "MINION"
+		});
+	}
+
+	let numberMaxions = random(level/3);
+
+	if (numberMaxions > 0) {
+		for (let i = 0; i < numberMaxions; i++) {
+			enemies[i].TYPE = "MAXION";
+			enemies[i].HP = STATS.Maxion.HP;
+			enemies[i].ATK = STATS.Maxion.ATK;
+			enemies[i].DEF = STATS.Maxion.DEF;
+		}
+	}
+}
+
+function spawnPlayer() {
+	//Draw player
+	let x = getRandomCoordinate(ROW);
+	let y = getRandomCoordinate(COL);
+	map[x][y] = PLAYER;
+	player.X = x;
+	player.Y = y;
+}
+
+function spawnShards() {
+
+	let numberShards = random(level);
 	
-	if (enemyHit) {
-		player.HP -= dmgToPlayer;
-	} else {
-		$("status").innerHTML = "The " + enemies[idx].TYPE + " missed!";
+	//At least one shard should spawn per level
+	if (numberShards == 0) { numberShards = 1 };
+
+	for (let i = 0; i < numberShards; i++) {
+		let x = getRandomCoordinate(ROW);
+		let y = getRandomCoordinate(COL);
+		map[x][y] = SHARD;
 	}
 }
-
-function fight(enemyIdx) {
-	//Roll initiative
-	let playerInit = Math.floor(Math.random() * 20);
-	let enemyInit = Math.floor(Math.random() * 20);
-
-	let playerHit = Math.floor(Math.random() * 20) > enemies[enemyIdx].DEF;
-	let dmgToEnemy = player.ATK + Math.floor(Math.random() * 2);
-
-//	if (playerInit > enemyInit) {
-		if (playerHit) {
-			enemies[enemyIdx].HP -= dmgToEnemy;
-		} else {
-			$("status").innerHTML = "You missed!";
-		}
-
-		if (enemies[enemyIdx].HP < 1) {
-			movePlayerTo(enemies[enemyIdx].X, enemies[enemyIdx].Y);
-			enemies[enemyIdx].X = -1;
-			enemies[enemyIdx].Y = -1;
-			player.HP++;
-		}
-//	} else {
-//		if (playerHit) {
-//			residualDamage = playerHit;
-//			enemies[enemyIdx].RESIDUAL_DAMAGE_PENDING = true;		
-//		}
-//	}
-}
-
-function getEnemyAt(x,y) {
-	for (let i = 0; i < enemies.length; i++) {
-		if (enemies[i].X === x && enemies[i].Y === y) {
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-function loop() {
-	for (let i = 0; i < enemies.length; i++) {
-		if (enemies[i].RESIDUAL_DAMAGE_PENDING) {
-			enemies[i].HP - residualDamage;
-
-			if (enemies[i].HP < 1) {
-				movePlayerTo(enemies[i].X, enemies[i].Y);
-				enemies[i].X = -1;
-				enemies[i].Y = -1;
-				player.HP++;
-			}
-		}
-		
-	}
 	
-	//Update map and stats
-	drawStats();
-	drawMap(map);
-
-	//Check to see if player has died
-	if (player.HP < 1) {
-		play = false;
-		$("status").innerHTML = "You died.";
-	}
-
-	let proposedMove = -1;
-	if (keyPressed === LEFT) {
-		proposedMove = player.Y - 1;
-		if (map[player.X][proposedMove] === WALL) {
-		} else if (map[player.X][proposedMove]=== EXIT) {
-			level++;
-			buildLevel();
-		} else if (map[player.X][proposedMove]  === MINION ||
-			map[player.X][proposedMove] === MAXION) {
-			fight(getEnemyAt(player.X,proposedMove));
-		} else if (map[player.X][proposedMove] === SHARD) {
-			player.SHARDS++;
-			player.ATK += level;
-			movePlayerTo(player.X,proposedMove);
-		} else {
-			movePlayerTo(player.X,proposedMove);
-		}
-	} else if (keyPressed === RIGHT) {
-		proposedMove = player.Y + 1;
-		if (map[player.X][proposedMove] === WALL) {
-		} else if (map[player.X][proposedMove]=== EXIT) {
-			level++;
-			buildLevel();
-		} else if (map[player.X][proposedMove]  === MINION ||
-			map[player.X][proposedMove] === MAXION) {
-			fight(getEnemyAt(player.X,proposedMove));
-		} else if (map[player.X][proposedMove] === SHARD) {
-			player.SHARDS++;
-			player.ATK += level;
-			movePlayerTo(player.X,proposedMove);
-		} else {
-			movePlayerTo(player.X,proposedMove);
-		}
-	} else if (keyPressed === UP) {
-		proposedMove = player.X - 1;
-		if (map[proposedMove][player.Y] === WALL) {
-		} else if (map[proposedMove][player.Y]=== EXIT) {
-			level++;
-			buildLevel();
-		} else if (map[proposedMove][player.Y]  === MINION ||
-			map[proposedMove][player.Y] === MAXION) {
-			fight(getEnemyAt(proposedMove,player.Y));
-		} else if (map[proposedMove][player.Y] === SHARD) {
-			player.SHARDS++;
-			player.ATK += level;
-			movePlayerTo(proposedMove,player.Y);
-		} else {
-			movePlayerTo(proposedMove,player.Y);
-		}
-	} else if (keyPressed === DOWN) {
-		proposedMove = player.X + 1;
-		if (map[proposedMove][player.Y] === WALL) {
-		} else if (map[proposedMove][player.Y]=== EXIT) {
-			level++;
-			buildLevel();
-		} else if (map[proposedMove][player.Y]  === MINION ||
-			map[proposedMove][player.Y] === MAXION) {
-			fight(getEnemyAt(proposedMove,player.Y));
-		} else if (map[proposedMove][player.Y] === SHARD) {
-			player.SHARDS++;
-			player.ATK += level;
-			movePlayerTo(proposedMove,player.Y);
-		} else {
-			movePlayerTo(proposedMove,player.Y);
-		}
-	}
-
-	for (let i = 0; i < enemies.length; i++) {
-		if (player.X === enemies[i].X &&
-			(player.Y === enemies[i].Y - 1 
-				|| player.Y === enemies[i].Y + 1)
-
-		|| player.Y === enemies[i].Y &&
-			(player.X === enemies[i].X - 1
-				|| player.X === enemies[i].Y + 1)) {
-			
-			enemyAttack(i);
-		} else {
-			if (player.X - enemies[i].X > 0) {
-				moveEnemyTo(i, enemies[i].X + 1, enemies[i].Y);
-			} else if (player.X - enemies[i].X < 0) {
-				moveEnemyTo(i, enemies[i].X - 1, enemies[i].Y);
-			} else if (player.X - enemies[i].X === 0) {
-				if (player.Y - enemies[i].Y > 0) {
-					moveEnemyTo(i, enemies[i].X, enemies[i].Y + 1);
-				} else if (player.Y - enemies[i].Y < 0) {
-					moveEnemyTo(i, enemies[i].X, enemies[i].Y - 1);
-				}
-			}
-		}
-				
-	}
-}
-		
 function waitingKeypress() {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
@@ -352,19 +338,4 @@ function waitingKeypress() {
       }
     }
   });
-}
-
-async function game() {
-	level++;
-	buildLevel();
-	
-	while (play) {
-	
-		await waitingKeypress();
-
-		if (keyPressed > 0) {
-			loop();
-		}	
-	
-	}	
 }
