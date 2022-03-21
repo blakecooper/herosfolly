@@ -273,6 +273,8 @@ function spawnMonsters() {
 
 	let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + level);
 
+	if (numberEnemies === 0) { numberEnemies++; }
+
 	for (let i = 0; i < numberEnemies; i++) {
 		let x = getRandomCoordinate(ROW);
 		let y = getRandomCoordinate(COL);
@@ -291,6 +293,10 @@ function spawnMonsters() {
 	let numberMaxions = random(level/3);
 
 	if (numberMaxions > 0) {
+		if (numberMaxions > enemies.length) {
+			numberMaxions = enemies.length;
+		}
+
 		for (let i = 0; i < numberMaxions; i++) {
 			enemies[i].TYPE = "MAXION";
 			enemies[i].HP = STATS.Maxion.HP;
