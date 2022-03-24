@@ -13,6 +13,8 @@ const MAP = 0;
 const SHARDS = 1;
 const MONSTERS = 2;
 const PLAYER_MAP = 3;
+
+const POTIONS_EVERY = 5;
  
 let level = 0;
 let play = true;
@@ -23,6 +25,7 @@ let keyPressed = -1;
 let enemiesMatrix = [];
 let shardsMatrix = [];
 let playerMatrix = [];
+let potionsMatrix = [];
 
 let enemies = [];
 
@@ -76,12 +79,24 @@ function buildLevel() {
 
 	spawnExit();
 
+	if (level % POTIONS_EVERY === 0) {
+		spawnPotion();
+	} 
+
 	drawMap();
 }
 
 function checkForMonsters(x,y) {
 	if (enemiesMatrix[x][y] === MINION || 
 		enemiesMatrix[x][y] === MAXION) {
+		return true;
+	}
+
+	return false;
+}
+
+function checkForPotions(x,y) {
+	if (level % POTIONS_EVERY === 0 && potionsMatrix[x][y] === POTION) {
 		return true;
 	}
 
@@ -113,6 +128,10 @@ function drawMap() {
 	drawMonsters();
 	drawShards();
 	drawPlayer();
+	
+	if (level % POTIONS_EVERY === 0) {
+		drawPotions();
+	}
 }
 
 function drawMonsters() {
@@ -146,6 +165,27 @@ function drawMonsters() {
     }
 
     $("monsters").innerHTML = html;
+}
+
+function drawPotions() {
+	$("potions").innerHTML = "";
+	let html = "";
+
+	for (let row = 0; row < potionsMatrix.length; row++) {
+		for (let col = 0; col < potionsMatrix[0].length; col++) {
+			if (potionsMatrix[row][col] === POTION) {
+				html += "<span class='background'>";
+			}
+
+			html += potionsMatrix[row][col];
+			
+			if (potionsMatrix[row][col] === POTION) {
+				html += "</span>";
+			}
+		}
+		html += "<br>";
+	} 
+	$("potions").innerHTML = html;
 }
 
 function drawPlayer() {
@@ -307,6 +347,10 @@ function loop() {
 			pickupShard();	
 			shardsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
 			movePlayerTo(proposedPlayerX,proposedPlayerY);
+		} else if (checkForPotions(proposedPlayerX,proposedPlayerY)){
+			pickupPotion();
+			movePlayerTo(proposedPlayerX,proposedPlayerY);
+			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
 		} else {
 			if (map[proposedPlayerX][proposedPlayerY] === WALL) {
 			} else if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
@@ -359,7 +403,7 @@ function movePlayerTo(x,y) {
 }
 
 function moveEnemyTo(idx,x,y) {
-	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR) {
+	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR && enemiesMatrix[x][y] === "&nbsp") {
 		enemiesMatrix[enemies[idx].X][enemies[idx].Y] = "&nbsp";
 		if (enemies[idx].TYPE == MINION) {
 			enemiesMatrix[x][y] = MINION;
@@ -375,6 +419,12 @@ function moveEnemyTo(idx,x,y) {
 function newLevel() {
 	level++;
 	buildLevel();
+}
+
+function pickupPotion() {
+	if (player.HP < STATS.Player.BASE_HP) {
+		player.HP = STATS.Player.BASE_HP;
+	}
 }
 
 function pickupShard() {
@@ -452,6 +502,21 @@ function spawnMonsters() {
             enemiesMatrix[enemies[i].X][enemies[i].Y] = MAXION;
         }
     }
+}
+
+function spawnPotion() {
+	potionsMatrix = [];
+
+	for (let row = 0; row < map.length; row++) {
+		potionsMatrix.push([]);
+		for (let col = 0; col < map[0].length; col++) {
+			potionsMatrix[row][col] = "&nbsp";
+		}
+	}
+
+	let x = getRandomCoordinate(ROW);
+	let y = getRandomCoordinate(COL);
+	potionsMatrix[x][y] = POTION;
 }
 
 function spawnPlayer() {
