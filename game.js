@@ -14,6 +14,9 @@ let play = true;
 let map = "no map loaded";
 let player = STATS.Player; 
 let keyPressed = -1;
+
+let enemiesMatrix = [];
+
 let enemies = [];
 
 function $(e) {
@@ -47,7 +50,7 @@ function buildLevel() {
 				map[i][j] = FLOOR;
 			}
 		}
-	}
+    }
 
 	spawnMonsters();
 
@@ -57,18 +60,46 @@ function buildLevel() {
 
 	spawnExit();
 
-	drawMap(map);
+	drawMap();
 }
 
 function drawMap() {
-	//Draw the level
-	$("map").innerHTML = "";
-	for (let row = 0; row < map.length; row++) {
+	
+    $("level").innerHTML = "";
+	let html = "";
+
+    for (let row = 0; row < map.length; row++) {
 		for (let col = 0; col < map[row].length; col++) {
-			$("map").innerHTML += map[row][col];
+			html += map[row][col];
 		}
-		$("map").innerHTML += "<br>";
+		html += "<br>";
 	}
+
+    $("level").innerHTML = html;
+    drawMonsters();
+}
+
+function drawMonsters() {
+
+    let html = "";
+    $("monsters").innerHTML = "";
+    for (let row = 0; row < enemiesMatrix.length; row++) {
+        for (let col = 0; col < enemiesMatrix[0].length; col++) {
+            if (enemiesMatrix[row][col] === MINION || 
+                enemiesMatrix[row][col] === MAXION) {
+                html += "<span class='background'>";
+            }
+            
+            html += enemiesMatrix[row][col];
+            
+            if (enemiesMatrix[row][col] !== "&nbsp") {
+                html += "</span>";
+            }
+        }
+        html += "<br>";
+    }
+
+    $("monsters").innerHTML = html;
 }
 
 function drawStats() {
@@ -227,11 +258,11 @@ function movePlayerTo(x,y) {
 
 function moveEnemyTo(idx,x,y) {
 	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR) {
-		map[enemies[idx].X][enemies[idx].Y] = FLOOR;
+		enemiesMatrix[enemies[idx].X][enemies[idx].Y] = "&nbsp";
 		if (enemies[idx].TYPE == "MINION") {
-			map[x][y] = MINION;
+			enemiesMatrix[x][y] = MINION;
 		} else {
-			map[x][y] = MAXION;
+			enemiesMatrix[x][y] = MAXION;
 		}
 		enemies[idx].X = x;
 		enemies[idx].Y = y;
@@ -270,15 +301,15 @@ function spawnExit() {
 function spawnMonsters() {
 
 	enemies = [];
+    enemiesMatrix = [];
 
-	let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + level);
+    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + level);
 
 	if (numberEnemies === 0) { numberEnemies++; }
 
 	for (let i = 0; i < numberEnemies; i++) {
 		let x = getRandomCoordinate(ROW);
 		let y = getRandomCoordinate(COL);
-		map[x][y] = MINION;
 		enemies.push({
 			"X": x,
 			"Y": y,
@@ -304,6 +335,21 @@ function spawnMonsters() {
 			enemies[i].DEF = STATS.Maxion.DEF;
 		}
 	}
+
+    for (let row = 0; row < map.length; row++) {
+        enemiesMatrix.push([]);
+        for (let col = 0; col < map[0].length; col++) {
+            enemiesMatrix[row][col] = "&nbsp";
+        }
+    }
+
+    for (let i = 0; i < enemies.length; i++) {
+        if (enemies[i].TYPE === "MINION") {
+            enemiesMatrix[enemies[i].X][enemies[i].Y] = MINION;
+        } else if (enemies[i].TYPE === "MAXION") {
+            enemiesMatrix[enemies[i].X][enemies[i].Y] = MAXION;
+        }
+    }
 }
 
 function spawnPlayer() {
