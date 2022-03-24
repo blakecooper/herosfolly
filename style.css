@@ -2,3 +2,24 @@ body {
     background-color: black;
     color: white;
 }
+
+.map {
+    position: absolute;
+    top: 10%;
+}
+
+#level {
+    color: lightgrey;
+}
+
+#monsters {
+    color: red;
+}
+
+#shards {
+    color: yellow;
+}
+
+.background {
+    background-color: black;
+}
