@@ -5,3 +5,4 @@ const MINION = "m";
 const MAXION = "M";
 const EXIT = "x";
 const SHARD = "*";
+const POTION = "%";

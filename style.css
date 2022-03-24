@@ -9,7 +9,7 @@ body {
 }
 
 #level {
-    color: lightgrey;
+    opacity: .5;
 }
 
 #monsters {
@@ -18,6 +18,10 @@ body {
 
 #shards {
     color: yellow;
+}
+
+#potions {
+    color: green;
 }
 
 .background {
