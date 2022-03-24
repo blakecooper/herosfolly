@@ -16,6 +16,10 @@ body {
     color: red;
 }
 
+#shards {
+    color: yellow;
+}
+
 .background {
     background-color: black;
 }
