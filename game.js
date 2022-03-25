@@ -1,10 +1,18 @@
 const BASE_ENEMIES_PER_FLOOR = 4;
 
 const LEFT = 37;
+const NPAD_LEFT = 52;
 const UP = 38;
+const NPAD_UP = 56;
 const RIGHT = 39;
+const NPAD_RIGHT = 54;
 const DOWN = 40;
+const NPAD_DOWN = 50;
 const WAIT = 190;
+const UPLEFT = 55;
+const UPRIGHT = 57;
+const DOWNLEFT = 49;
+const DOWNRIGHT = 51;
 
 const ROW = 0;
 const COL = 1;
@@ -329,14 +337,26 @@ function loop() {
 	let proposedPlayerX = player.X;
 	let proposedPlayerY = player.Y
 
-	if (keyPressed === LEFT) {
+	if (keyPressed === LEFT || keyPressed === NPAD_LEFT) {
 		proposedPlayerY--;
-	} else if (keyPressed === RIGHT) {
+	} else if (keyPressed === RIGHT || keyPressed === NPAD_RIGHT) {
 		proposedPlayerY++;
-	} else if (keyPressed === UP) {
+	} else if (keyPressed === UP || keyPressed === NPAD_UP) {
 		proposedPlayerX--;
-	} else if (keyPressed === DOWN) {
+	} else if (keyPressed === DOWN || keyPressed === NPAD_DOWN) {
 		proposedPlayerX++;
+	} else if (keyPressed === DOWNRIGHT) {
+		proposedPlayerX++;
+		proposedPlayerY++;
+	} else if (keyPressed === DOWNLEFT) {
+		proposedPlayerX++;
+		proposedPlayerY--;
+	} else if (keyPressed === UPRIGHT) {
+		proposedPlayerX--;
+		proposedPlayerY++;
+	} else if (keyPressed === UPLEFT) {
+		proposedPlayerX--;
+		proposedPlayerY--;
 	}
 
 	//Complete player's move based on what's in the proposed move square
@@ -559,15 +579,19 @@ function spawnShards() {
 		shardsMatrix[x][y] = SHARD;
 	}
 }
-	
+
 function waitingKeypress() {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-      if (e.keyCode === LEFT ||
-		e.keyCode === RIGHT ||
-		e.keyCode === UP ||
-		e.keyCode === DOWN ||
+      if (e.keyCode === LEFT || e.keyCode === NPAD_LEFT ||
+		e.keyCode === RIGHT || e.keyCode === NPAD_RIGHT ||
+		e.keyCode === UP || e.keyCode === NPAD_UP ||
+		e.keyCode === DOWN || e.keyCode === NPAD_DOWN ||
+		e.keyCode === UPLEFT ||
+		e.keyCode === DOWNLEFT ||
+		e.keyCode === UPRIGHT ||
+		e.keyCode === DOWNRIGHT ||
 		e.keyCode === WAIT) {
         	document.removeEventListener('keydown', onKeyHandler);
 		keyPressed = e.keyCode;
