@@ -79,6 +79,8 @@ function buildLevel() {
 		}
 	}
 
+	blankGrid(potionsMatrix);
+
 	spawnMonsters();
 
 	spawnShards();
@@ -136,6 +138,18 @@ function drawMap() {
 	drawMonsters();
 	drawShards();
 	drawPlayer();
+
+	html = "";
+
+	//force clear potion layer every floor
+	for (let row = 0; row < map.length; row++) {
+		for (let col = 0; col < map[0].length; col++) {
+			html += "&nbsp";
+		}
+		html += "<br>";
+	}
+
+	$("potions").innerHTML = html;
 	
 	if (level % POTIONS_EVERY === 0) {
 		drawPotions();
@@ -258,11 +272,56 @@ function drawStatus(message) {
 function enemyAttack(idx) {
 	let enemyHit = Math.floor(Math.random() * 20) > player.DEF;
 	let dmgToPlayer = enemies[idx].ATK + Math.floor(Math.random() * 2);
+
+	let enemyName = "minion";
+
+	if (enemies[idx].TYPE === MAXION) {
+		enemyName = "maxion";
+	}
 	
 	if (enemyHit) {
 		player.HP -= dmgToPlayer;
 	} else {
-		$("status").innerHTML = "The " + enemies[idx].TYPE + " missed!";
+		drawStatus("The " + enemyName + " missed!");
+	}
+}
+
+function enemyMoves(idx) {
+
+	let randomMovementChoice = random(2);
+	
+	if ((player.X < enemies[idx].X) && (player.Y < enemies[idx].Y)) {
+		if (randomMovementChoice === 0) {
+			moveEnemyTo(idx, (enemies[idx].X - 1),(enemies[idx].Y));
+		} else {
+			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y - 1));
+		}
+	} else if ((player.X < enemies[idx].X) && (player.Y === enemies[idx].Y)) {
+		moveEnemyTo(idx, (enemies[idx].X - 1), enemies[idx].Y);
+	} else if ((player.X < enemies[idx].X) && (player.Y > enemies[idx].Y)) {
+		if (randomMovementChoice === 0) {
+			moveEnemyTo(idx, (enemies[idx].X - 1),(enemies[idx].Y));
+		} else {
+			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y + 1));
+		}
+	} else if ((player.X === enemies[idx].X) && (player.Y < enemies[idx].Y)) {
+		moveEnemyTo(idx, enemies[idx].X, (enemies[idx].Y - 1));
+	} else if ((player.X === enemies[idx].X) && (player.Y > enemies[idx].Y)) {
+		moveEnemyTo(idx, enemies[idx].X, (enemies[idx].Y + 1));
+	} else if ((player.X > enemies[idx].X) && (player.Y < enemies[idx].Y)) {
+		if (randomMovementChoice === 0) {
+			moveEnemyTo(idx, (enemies[idx].X + 1),(enemies[idx].Y));
+		} else {
+			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y - 1));
+		}
+	} else if ((player.X > enemies[idx].X) && (player.Y === enemies[idx].Y)) {
+		moveEnemyTo(idx, (enemies[idx].X + 1), enemies[idx].Y);
+	} else if ((player.X > enemies[idx].X) && (player.Y > enemies[idx].Y)) {
+		if (randomMovementChoice === 0) {
+			moveEnemyTo(idx, (enemies[idx].X + 1),(enemies[idx].Y));
+		} else {
+			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y + 1));
+		}
 	}
 }
 
@@ -273,7 +332,7 @@ function fight(enemyIdx) {
 	if (playerHit) {
 		enemies[enemyIdx].HP -= dmgToEnemy;
 	} else {
-		$("status").innerHTML = "You missed!";
+		drawStatus("You missed!");
 	}
 
 	if (enemies[enemyIdx].HP < 1) {
@@ -326,12 +385,6 @@ function loop() {
 	drawStatus("");
 	drawStats();
 	drawMap();
-
-	//Check to see if player has died
-	if (player.HP < 1) {
-		play = false;
-		$("status").innerHTML = "You died.";
-	}
 
 	//Get coordinates of proposed player move
 	let proposedPlayerX = player.X;
@@ -389,29 +442,24 @@ function loop() {
 
 	//Check for enemies next to player; those enemies attack, others move toward player
 	for (let i = 0; i < enemies.length; i++) {
-		if (player.X === enemies[i].X &&
-			(player.Y === enemies[i].Y - 1 
-				|| player.Y === enemies[i].Y + 1)
-
-		|| player.Y === enemies[i].Y &&
-			(player.X === enemies[i].X - 1
-				|| player.X === enemies[i].Y + 1)) {
-			
+	
+		if ((enemies[i].X > 0 && enemies[i].Y > 0) && (Math.abs(player.X - enemies[i].X) < 2) && (Math.abs(player.Y - enemies[i].Y) < 2)) {
 			enemyAttack(i);
 		} else {
-			if (player.X - enemies[i].X > 0) {
-				moveEnemyTo(i, enemies[i].X + 1, enemies[i].Y);
-			} else if (player.X - enemies[i].X < 0) {
-				moveEnemyTo(i, enemies[i].X - 1, enemies[i].Y);
-			} else if (player.X - enemies[i].X === 0) {
-				if (player.Y - enemies[i].Y > 0) {
-					moveEnemyTo(i, enemies[i].X, enemies[i].Y + 1);
-				} else if (player.Y - enemies[i].Y < 0) {
-					moveEnemyTo(i, enemies[i].X, enemies[i].Y - 1);
-				}
-			}
+			if (random(20) > 1) {
+				enemyMoves(i);
+			}	
 		}	
 	}
+	
+	//Check to see if player has died during the loop
+	if (player.HP < 1) {
+		player.HP = 0;
+		drawStats();
+		play = false;
+		drawStatus("You died.");
+	}
+
 }
 
 function movePlayerTo(x,y) {
@@ -475,7 +523,7 @@ function spawnMonsters() {
 	enemies = [];
     enemiesMatrix = [];
 
-    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + level);
+    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + (level/3));
 
 	if (numberEnemies === 0) { numberEnemies++; }
 
