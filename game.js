@@ -517,7 +517,7 @@ function pickupPotion() {
 
 function pickupShard() {
 	player.SHARDS++;
-	player.ATK += level;
+	player.ATK += (2 + Math.floor(level/3));
 }
 
 function random(value) {
