@@ -1,38 +1,26 @@
 const BASE_ENEMIES_PER_FLOOR = 4;
 
-const LEFT = 0;
-const RIGHT = 1;
-const DOWN = 2;
-const UP = 3;
-const UPLEFT = 4;
-const UPRIGHT = 5;
-const DOWNLEFT = 6;
-const DOWNRIGHT = 7;
-const WAIT = 8;
-
-const KEYMAP = {
-	"37": LEFT,
-	"38": UP,
-	"39": RIGHT,
-	"40": DOWN,
-	"49": DOWNLEFT,
-	"50": DOWN,
-	"51": DOWNRIGHT,
-	"52": LEFT,
-	"54": RIGHT,
-	"55": UPLEFT,
-	"56": UP,
-	"57": UPRIGHT,
-	"97": DOWNLEFT,
-	"98": DOWN,
-	"99": DOWNRIGHT,
-	"100": LEFT,
-	"102": RIGHT,
-	"103": UPLEFT,
-	"104": UP,
-	"105": UPRIGHT,
-	"190": WAIT
-};
+const LEFT = 37;
+const NPAD_LEFT = 52;
+const NPAD_LEFT_2 = 100;
+const UP = 38;
+const NPAD_UP = 56;
+const NPAD_UP_2 = 104
+const RIGHT = 39;
+const NPAD_RIGHT = 54;
+const NPAD_RIGHT_2 = 102;
+const DOWN = 40;
+const NPAD_DOWN = 50;
+const NPAD_DOWN_2 = 98;
+const WAIT = 190;
+const UPLEFT = 55;
+const NPAD_UPLEFT = 103;
+const UPRIGHT = 57;
+const NPAD_UPRIGHT = 105;
+const DOWNLEFT = 49;
+const NPAD_DOWNLEFT = 97; 
+const DOWNRIGHT = 51;
+const NPAD_DOWNRIGHT = 99;
 
 const ROW = 0;
 const COL = 1;
@@ -410,24 +398,24 @@ function loop() {
 	let proposedPlayerX = player.X;
 	let proposedPlayerY = player.Y
 
-	if (KEYMAP[keyPressed] === LEFT) {
+	if (keyPressed === LEFT || keyPressed === NPAD_LEFT || keyPressed === NPAD_LEFT_2) {
 		proposedPlayerY--;
-	} else if (KEYMAP[keyPressed] === RIGHT) {
+	} else if (keyPressed === RIGHT || keyPressed === NPAD_RIGHT || keyPressed === NPAD_RIGHT_2) {
 		proposedPlayerY++;
-	} else if (KEYMAP[keyPressed] === UP) {
+	} else if (keyPressed === UP || keyPressed === NPAD_UP || keyPressed === NPAD_UP_2) {
 		proposedPlayerX--;
-	} else if (KEYMAP[keyPressed] === DOWN) {
+	} else if (keyPressed === DOWN || keyPressed === NPAD_DOWN || keyPressed === NPAD_DOWN_2) {
 		proposedPlayerX++;
-	} else if (KEYMAP[keyPressed] === DOWNRIGHT) {
+	} else if (keyPressed === DOWNRIGHT || keyPressed === NPAD_DOWNRIGHT) {
 		proposedPlayerX++;
 		proposedPlayerY++;
-	} else if (KEYMAP[keyPressed] === DOWNLEFT) {
+	} else if (keyPressed === DOWNLEFT || keyPressed === NPAD_DOWNLEFT) {
 		proposedPlayerX++;
 		proposedPlayerY--;
-	} else if (KEYMAP[keyPressed] === UPRIGHT) {
+	} else if (keyPressed === UPRIGHT || keyPressed === NPAD_UPRIGHT) {
 		proposedPlayerX--;
 		proposedPlayerY++;
-	} else if (KEYMAP[keyPressed] === UPLEFT) {
+	} else if (keyPressed === UPLEFT || keyPressed === NPAD_UPLEFT) {
 		proposedPlayerX--;
 		proposedPlayerY--;
 	}
@@ -517,7 +505,7 @@ function pickupPotion() {
 
 function pickupShard() {
 	player.SHARDS++;
-	player.ATK += (2 + Math.floor(level/3));
+	player.ATK += level;
 }
 
 function random(value) {
@@ -652,13 +640,18 @@ function waitingKeypress() {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-	for (key in KEYMAP) {
-		if (e.keyCode === parseInt(key)) {
-        		document.removeEventListener('keydown', onKeyHandler);
-			keyPressed = e.keyCode;
-        		console.log(KEYMAP[keyPressed]);
-			resolve();
-		}
+      if (e.keyCode === LEFT || e.keyCode === NPAD_LEFT || e.keyCode === NPAD_LEFT_2 ||
+		e.keyCode === RIGHT || e.keyCode === NPAD_RIGHT || e.keyCode === NPAD_RIGHT_2 ||
+		e.keyCode === UP || e.keyCode === NPAD_UP || e.keyCode === NPAD_UP_2 ||
+		e.keyCode === DOWN || e.keyCode === NPAD_DOWN || e.keyCode === NPAD_DOWN_2 ||
+		e.keyCode === UPLEFT || e.keyCode === NPAD_UPLEFT ||
+		e.keyCode === DOWNLEFT || e.keyCode === NPAD_DOWNLEFT ||
+		e.keyCode === UPRIGHT ||  e.keyCode === NPAD_UPRIGHT ||
+		e.keyCode === DOWNRIGHT || e.keyCode === NPAD_DOWNRIGHT ||
+		e.keyCode === WAIT) {
+        	document.removeEventListener('keydown', onKeyHandler);
+		keyPressed = e.keyCode;
+        	resolve();
       }
     }
   });
