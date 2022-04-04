@@ -12,13 +12,15 @@ let STATS = {
 		"BASE_HP":20,
 		"HP":6,
 		"DEF":5,
-		"ATK":3
+		"ATK":3,
+		"SHARDS":0
 	},
 	"Maxion": {
 		"BASE_HP":18,
 		"HP":18,
 		"DEF":8,
-		"ATK":8
+		"ATK":8,
+		"SHARDS":0
 	}
 }
 		

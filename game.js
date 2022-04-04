@@ -356,12 +356,19 @@ function fight(enemyIdx) {
 	}
 
 	if (enemies[enemyIdx].HP < 1) {
-		movePlayerTo(enemies[enemyIdx].X, enemies[enemyIdx].Y);
 		enemies[enemyIdx].X = -1;
 		enemies[enemyIdx].Y = -1;
 		drawMonsters();
 		player.HP++;
+	
+		for (let i = 0; i < enemies[enemyIdx].SHARDS; i++) {
+			pickupShard();
+		}
+
+		return false;
 	}
+
+	return true;
 
 }
 
@@ -432,33 +439,30 @@ function loop() {
 		proposedPlayerY--;
 	}
 
+	let monsterPresent = false;
+
 	//Complete player's move based on what's in the proposed move square
 	if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
-		fight(getEnemyAt(proposedPlayerX,proposedPlayerY));
-	} else {
-		if (checkForShards(proposedPlayerX,proposedPlayerY)) {
-			pickupShard();	
-			shardsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
-			movePlayerTo(proposedPlayerX,proposedPlayerY);
-		} else if (checkForPotions(proposedPlayerX,proposedPlayerY)){
-			pickupPotion();
-			movePlayerTo(proposedPlayerX,proposedPlayerY);
-			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
-		} else {
-			if (map[proposedPlayerX][proposedPlayerY] === WALL) {
-			} else if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
-			newLevel();
-			} else {
-				movePlayerTo(proposedPlayerX,proposedPlayerY);
-			}
-		}
+		monsterPresent = fight(getEnemyAt(proposedPlayerX,proposedPlayerY));
 	}
 
-	//After dealing with potential monsters, check again for an exit
-	if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
-		newLevel();
-	};	
+	if (!monsterPresent && checkForShards(proposedPlayerX,proposedPlayerY)) {
+		pickupShard();	
+		shardsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+	}
 
+	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
+			pickupPotion();
+			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+	}
+
+	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] === EXIT) {
+			newLevel();
+	}
+	
+	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] !== WALL) {
+		movePlayerTo(proposedPlayerX,proposedPlayerY);
+	}
 
 	//Check for enemies next to player; those enemies attack, others move toward player
 	for (let i = 0; i < enemies.length; i++) {
@@ -493,6 +497,11 @@ function movePlayerTo(x,y) {
 function moveEnemyTo(idx,x,y) {
 	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR && enemiesMatrix[x][y] === "&nbsp") {
 		enemiesMatrix[enemies[idx].X][enemies[idx].Y] = "&nbsp";
+		if (checkForShards(x,y)) {
+			enemies[idx].SHARDS++;
+			shardsMatrix[x][y] = "&nbsp";
+		}
+
 		if (enemies[idx].TYPE == MINION) {
 			enemiesMatrix[x][y] = MINION;
 		} else if (enemies[idx].TYPE == MAXION) {
@@ -557,7 +566,8 @@ function spawnMonsters() {
 			"ATK": STATS.Minion.ATK,
 			"DEF": STATS.Minion.DEF,
 			"RESIDUAL_DAMAGE_PENDING": false,
-			"TYPE": MINION
+			"TYPE": MINION,
+			"SHARDS": 0
 		});
 	}
 
