@@ -43,7 +43,10 @@ const MONSTERS = 2;
 const PLAYER_MAP = 3;
 
 const POTIONS_EVERY = 5;
- 
+
+const MAX_NUMBER_HIGH_SCORES = 5;
+let isNewHighScore = false;
+
 let level = 0;
 let play = true;
 let map = "no map loaded";
@@ -57,8 +60,11 @@ let potionsMatrix = [];
 
 let enemies = [];
 
+let cookies = document.cookie;
+let highscores = [];
+
 function $(e) {
-	return document.getElementById(e);
+    return document.getElementById(e);
 }
 
 function avoidWalls(axis, value) {
@@ -141,6 +147,27 @@ function checkForShards(x,y) {
 	return false;
 }
 
+function displayHighScores() {
+    let alertMsg = "";
+
+    if (isNewHighScore) {
+        alertMsg += "New high score! ";
+    } else {
+        alertMsg += "High scores: ";
+    }
+
+    highscores.sort(function(a, b){return b - a});
+
+    for (let i = 0; i < highscores.length; i++) {
+        alertMsg += highscores[i];
+
+        if (i < (highscores.length-1)) {
+            alertMsg += ",";
+        }
+    }
+
+    alert(alertMsg);
+}
 function drawMap() {
 	
 	$("level").innerHTML = "";
@@ -190,7 +217,7 @@ function drawMonsters() {
 		}
 	}
 
-	for (let row = 0; row < enemiesMatrix.length; row++) {
+ 	for (let row = 0; row < enemiesMatrix.length; row++) {
         for (let col = 0; col < enemiesMatrix[0].length; col++) {
             if (enemiesMatrix[row][col] === MINION || 
                 enemiesMatrix[row][col] === MAXION) {
@@ -375,7 +402,9 @@ function fight(enemyIdx) {
 async function game() {
 	level++;
 	buildLevel();
-	
+
+    getHighScores();
+
 	while (play) {
 	
 		await waitingKeypress();
@@ -383,7 +412,11 @@ async function game() {
 		if (keyPressed > 0) {
 			loop();
 		}	
-	}	
+	}
+
+    maybeUpdateHighScores();
+
+    displayHighScores();
 }
 
 function getEnemyAt(x,y) {
@@ -396,6 +429,28 @@ function getEnemyAt(x,y) {
 	return -1;
 }
 
+function getHighScores() {
+    const key = "highscores:";
+    
+    if (cookies.length > 0 && cookies.search(key) !== -1) {
+
+        let highscoresString = cookies.substring(cookies.search(key) + key.length);
+
+        let idx = 0;
+
+        while (highscoresString[idx] < highscoresString.length && highscoresString[idx] !== ';') {
+            let score = "";
+            while (highscoresString[idx] !== ',') {
+                score += highscoresString[idx];
+                idx++;
+            }
+
+            highscores.push(parseInt(score));
+            idx++;
+        }
+    }
+}
+
 function getRandomCoordinate(axis) {
 	let mapLimit = map.length;
 
@@ -403,7 +458,7 @@ function getRandomCoordinate(axis) {
 		mapLimit = map[0].length;
 	}
 
-	return avoidWalls(axis, random(mapLimit-1));
+    return avoidWalls(axis, random(mapLimit-1));
 }
 
 function loop() {
@@ -484,6 +539,51 @@ function loop() {
 		drawStatus("You died.");
 	}
 
+}
+
+function maybeUpdateHighScores() {
+
+    if (highscores.length < MAX_NUMBER_HIGH_SCORES) {
+        highscores.push(player.SHARDS);
+        isNewHighScore = true;
+    } else {
+
+        let newHighScore = false;
+
+        for (let i = 0; i < highscores.length; i++) {
+            if (player.SHARDS > highscores[i]) {
+                newHighScore = true;
+            }
+        }
+    
+        if (newHighScore) {
+            isNewHighScore = true;
+            highscores.push(player.SHARDS);
+            let idxLowestScore = -1;
+
+            for (let i = 0; i < highscores.length; i++) {
+                if (i > 0) {
+                    if (highscores[i] < highscores[idxLowestScore]) {
+                        idxLowestScore = i;
+                    }
+                } else {
+                    idxLowestScore = i;
+                }
+            }
+
+            highscores.splice(idxLowestScore, 1);
+        }
+    }
+
+    let newHighscoreString = "highscores:";
+
+    for (let i = 0; i < highscores.length; i++) {
+        newHighscoreString += highscores[i] + ",";
+    }
+
+    newHighscoreString += ";";
+
+    document.cookie = newHighscoreString;
 }
 
 function movePlayerTo(x,y) {
