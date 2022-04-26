@@ -1,11 +1,18 @@
 body {
     background-color: black;
     color: white;
+    font-family: 'Courier';
+    font-size: 2em;
+}
+
+.center {
+    margin: auto;
 }
 
 .map {
     position: absolute;
     top: 10%;
+    left: 15%;
 }
 
 #level {

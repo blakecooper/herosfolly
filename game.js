@@ -1,26 +1,38 @@
 const BASE_ENEMIES_PER_FLOOR = 4;
 
-const LEFT = 37;
-const NPAD_LEFT = 52;
-const NPAD_LEFT_2 = 100;
-const UP = 38;
-const NPAD_UP = 56;
-const NPAD_UP_2 = 104
-const RIGHT = 39;
-const NPAD_RIGHT = 54;
-const NPAD_RIGHT_2 = 102;
-const DOWN = 40;
-const NPAD_DOWN = 50;
-const NPAD_DOWN_2 = 98;
-const WAIT = 190;
-const UPLEFT = 55;
-const NPAD_UPLEFT = 103;
-const UPRIGHT = 57;
-const NPAD_UPRIGHT = 105;
-const DOWNLEFT = 49;
-const NPAD_DOWNLEFT = 97; 
-const DOWNRIGHT = 51;
-const NPAD_DOWNRIGHT = 99;
+const LEFT = 0;
+const RIGHT = 1;
+const DOWN = 2;
+const UP = 3;
+const UPLEFT = 4;
+const UPRIGHT = 5;
+const DOWNLEFT = 6;
+const DOWNRIGHT = 7;
+const WAIT = 8;
+
+const KEYMAP = {
+	"37": LEFT,
+	"38": UP,
+	"39": RIGHT,
+	"40": DOWN,
+	"49": DOWNLEFT,
+	"50": DOWN,
+	"51": DOWNRIGHT,
+	"52": LEFT,
+	"54": RIGHT,
+	"55": UPLEFT,
+	"56": UP,
+	"57": UPRIGHT,
+	"97": DOWNLEFT,
+	"98": DOWN,
+	"99": DOWNRIGHT,
+	"100": LEFT,
+	"102": RIGHT,
+	"103": UPLEFT,
+	"104": UP,
+	"105": UPRIGHT,
+	"190": WAIT
+};
 
 const ROW = 0;
 const COL = 1;
@@ -44,10 +56,6 @@ let playerMatrix = [];
 let potionsMatrix = [];
 
 let enemies = [];
-
-function $(e) {
-	return document.getElementById(e);
-}
 
 function avoidWalls(axis, value) {
 	let mapDimension = map.length - 1;
@@ -76,20 +84,11 @@ function blankGrid(matrix) {
 
 function buildLevel() {
 	//Pick a random level
-	map = LEVELS[random(LEVELS.length)];
-
-	//Wipe slate from previous level
-	for (let i = 0; i < map.length; i++) {
-		for (let j = 0; j < map[0].length; j++) {
-			if (map[i][j] !== WALL) {
-				map[i][j] = FLOOR;
-			}
-		}
-	}
+	map = generateLevel();
 
 	blankGrid(potionsMatrix);
 
-	spawnMonsters();
+    spawnMonsters();
 
 	spawnShards();
 
@@ -136,7 +135,11 @@ function drawMap() {
 
     	for (let row = 0; row < map.length; row++) {
 		for (let col = 0; col < map[row].length; col++) {
-			html += map[row][col];
+			if (map[row][col] !== null) {
+                html += map[row][col];
+            } else {
+                html += "&nbsp";
+            }
 		}
 		html += "<br>";
 	}
@@ -356,7 +359,6 @@ function fight(enemyIdx) {
 async function game() {
 	level++;
 	buildLevel();
-	
 	while (play) {
 	
 		await waitingKeypress();
@@ -398,24 +400,24 @@ function loop() {
 	let proposedPlayerX = player.X;
 	let proposedPlayerY = player.Y
 
-	if (keyPressed === LEFT || keyPressed === NPAD_LEFT || keyPressed === NPAD_LEFT_2) {
+	if (KEYMAP[keyPressed] === LEFT) {
 		proposedPlayerY--;
-	} else if (keyPressed === RIGHT || keyPressed === NPAD_RIGHT || keyPressed === NPAD_RIGHT_2) {
+	} else if (KEYMAP[keyPressed] === RIGHT) {
 		proposedPlayerY++;
-	} else if (keyPressed === UP || keyPressed === NPAD_UP || keyPressed === NPAD_UP_2) {
+	} else if (KEYMAP[keyPressed] === UP) {
 		proposedPlayerX--;
-	} else if (keyPressed === DOWN || keyPressed === NPAD_DOWN || keyPressed === NPAD_DOWN_2) {
+	} else if (KEYMAP[keyPressed] === DOWN) {
 		proposedPlayerX++;
-	} else if (keyPressed === DOWNRIGHT || keyPressed === NPAD_DOWNRIGHT) {
+	} else if (KEYMAP[keyPressed] === DOWNRIGHT) {
 		proposedPlayerX++;
 		proposedPlayerY++;
-	} else if (keyPressed === DOWNLEFT || keyPressed === NPAD_DOWNLEFT) {
+	} else if (KEYMAP[keyPressed] === DOWNLEFT) {
 		proposedPlayerX++;
 		proposedPlayerY--;
-	} else if (keyPressed === UPRIGHT || keyPressed === NPAD_UPRIGHT) {
+	} else if (KEYMAP[keyPressed] === UPRIGHT) {
 		proposedPlayerX--;
 		proposedPlayerY++;
-	} else if (keyPressed === UPLEFT || keyPressed === NPAD_UPLEFT) {
+	} else if (KEYMAP[keyPressed] === UPLEFT) {
 		proposedPlayerX--;
 		proposedPlayerY--;
 	}
@@ -505,11 +507,7 @@ function pickupPotion() {
 
 function pickupShard() {
 	player.SHARDS++;
-	player.ATK += level;
-}
-
-function random(value) {
-	return Math.floor(Math.random() * value);
+	player.ATK += (2 + Math.floor(level/3));
 }
 
 function spawnExit() {
@@ -519,7 +517,7 @@ function spawnExit() {
 		let x = getRandomCoordinate(ROW);
 		let y = getRandomCoordinate(COL);		
 
-		if (map[x][y] !== PLAYER) {
+		if (map[x][y] !== null && map[x][y] !== WALL && map[x][y] !== PLAYER) {
 			map[x][y] = EXIT;		
 			acceptableExit = true;
 		}
@@ -536,17 +534,27 @@ function spawnMonsters() {
 	if (numberEnemies === 0) { numberEnemies++; }
 
 	for (let i = 0; i < numberEnemies; i++) {
-		let x = getRandomCoordinate(ROW);
-		let y = getRandomCoordinate(COL);
-		enemies.push({
-			"X": x,
-			"Y": y,
-			"HP": STATS.Minion.HP,
-			"ATK": STATS.Minion.ATK,
-			"DEF": STATS.Minion.DEF,
-			"RESIDUAL_DAMAGE_PENDING": false,
-			"TYPE": MINION
-		});
+		let acceptablePlacement = false;
+
+        while (!acceptablePlacement) {
+            let x = getRandomCoordinate(ROW);
+		    let y = getRandomCoordinate(COL);
+
+            if (map[x][y] === FLOOR) {
+		        enemies.push({
+    			    "X": x,
+    			    "Y": y,
+    			    "HP": STATS.Minion.HP,
+    			    "ATK": STATS.Minion.ATK,
+    			    "DEF": STATS.Minion.DEF,
+    			    "RESIDUAL_DAMAGE_PENDING": false,
+    			    "TYPE": MINION
+        		});
+        
+                acceptablePlacement = true;
+            }
+        }
+
 	}
 
 	let numberMaxions = random(level/3);
@@ -581,58 +589,69 @@ function spawnMonsters() {
 }
 
 function spawnPotion() {
-	potionsMatrix = [];
+	potionsMatrix = initializeMatrix(map.length,map[0].length,"&nbsp");
 
-	for (let row = 0; row < map.length; row++) {
-		potionsMatrix.push([]);
-		for (let col = 0; col < map[0].length; col++) {
-			potionsMatrix[row][col] = "&nbsp";
-		}
-	}
+    let acceptablePlacement = false;
 
-	let x = getRandomCoordinate(ROW);
-	let y = getRandomCoordinate(COL);
-	potionsMatrix[x][y] = POTION;
+    while (!acceptablePlacement) {
+
+	    let x = getRandomCoordinate(ROW);
+	    let y = getRandomCoordinate(COL);
+
+        if (map[x][y] === FLOOR) {
+            potionsMatrix[x][y] = POTION;
+            acceptablePlacement = true;
+        }
+
+    }
 }
 
 function spawnPlayer() {
 
-	playerMatrix = [];
+	playerMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
+	
+    let acceptablePlacement = false;
 
-	for (let row = 0; row < map.length; row++) {
-		playerMatrix.push([]);
-		for (let col = 0; col < map[0].length; col++) {
-			playerMatrix[row][col] = "&nbsp";
-		}
-	}
-	//Draw player
-	let x = getRandomCoordinate(ROW);
-	let y = getRandomCoordinate(COL);
-	playerMatrix[x][y] = PLAYER;
-	player.X = x;
-	player.Y = y;
+    while (!acceptablePlacement) {
+        //Draw player
+	    let x = getRandomCoordinate(ROW);
+	    let y = getRandomCoordinate(COL);
+	    
+        if (map[x][y] === FLOOR) {
+            playerMatrix[x][y] = PLAYER;
+	        player.X = x;
+	        player.Y = y;
+
+            acceptablePlacement = true;
+        }
+
+    }
 }
 
 function spawnShards() {
 
-	shardsMatrix = [];
-
+	shardsMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
 	
-    for (let row = 0; row < map.length; row++) {
-        shardsMatrix.push([]);
-        for (let col = 0; col < map[0].length; col++) {
-            shardsMatrix[row][col] = "&nbsp";
-        }
-    }
-	let numberShards = random(level);
+    let numberShards = random(level);
 	
 	//At least one shard should spawn per level
 	if (numberShards == 0) { numberShards = 1 };
 
 	for (let i = 0; i < numberShards; i++) {
-		let x = getRandomCoordinate(ROW);
-		let y = getRandomCoordinate(COL);
-		shardsMatrix[x][y] = SHARD;
+	
+        let acceptablePlacement = false;
+
+        while (!acceptablePlacement) {
+            let x = getRandomCoordinate(ROW);
+		    let y = getRandomCoordinate(COL);
+		    
+            if (map[x][y] === FLOOR) {
+                shardsMatrix[x][y] = SHARD;
+                acceptablePlacement = true;
+            }
+
+            
+        }
 	}
 }
 
@@ -640,18 +659,13 @@ function waitingKeypress() {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
-      if (e.keyCode === LEFT || e.keyCode === NPAD_LEFT || e.keyCode === NPAD_LEFT_2 ||
-		e.keyCode === RIGHT || e.keyCode === NPAD_RIGHT || e.keyCode === NPAD_RIGHT_2 ||
-		e.keyCode === UP || e.keyCode === NPAD_UP || e.keyCode === NPAD_UP_2 ||
-		e.keyCode === DOWN || e.keyCode === NPAD_DOWN || e.keyCode === NPAD_DOWN_2 ||
-		e.keyCode === UPLEFT || e.keyCode === NPAD_UPLEFT ||
-		e.keyCode === DOWNLEFT || e.keyCode === NPAD_DOWNLEFT ||
-		e.keyCode === UPRIGHT ||  e.keyCode === NPAD_UPRIGHT ||
-		e.keyCode === DOWNRIGHT || e.keyCode === NPAD_DOWNRIGHT ||
-		e.keyCode === WAIT) {
-        	document.removeEventListener('keydown', onKeyHandler);
-		keyPressed = e.keyCode;
-        	resolve();
+	for (key in KEYMAP) {
+		if (e.keyCode === parseInt(key)) {
+        		document.removeEventListener('keydown', onKeyHandler);
+			keyPressed = e.keyCode;
+        		console.log(KEYMAP[keyPressed]);
+			resolve();
+		}
       }
     }
   });
