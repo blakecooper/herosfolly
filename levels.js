@@ -59,8 +59,18 @@ function generateLevel(string = "default") {
 
     for (let roomRow = 0; roomRow < roomRows; roomRow++) {
         for (let roomCol = 0; roomCol < roomCols; roomCol++) {
-            let x = (roomStats[(roomRow * roomCols) + roomCol][0] + roomStats[(roomRow * roomCols) + roomCol][2]) + (roomRow * MAX_ROOM_SIZE) - 5;
-            let y = (roomStats[(roomRow * roomCols) + roomCol][1] + roomStats[(roomRow * roomCols) + roomCol][3] + (roomCol * MAX_ROOM_SIZE)) - 1;
+
+            if (roomCol < roomCols - 1) {
+            let x = Math.floor((roomStats[(roomRow * roomCols) + roomCol][0] + roomStats[(roomRow * roomCols) + roomCol][2]) / 2) + (roomRow * MAX_ROOM_SIZE);
+            let y = Math.floor((roomStats[(roomRow * roomCols) + roomCol][1] + roomStats[(roomRow * roomCols) + roomCol][3]) / 2) + (roomCol * MAX_ROOM_SIZE);
+
+            let ySteps = 0;
+
+            while (level[x][y + ySteps] !== WALL) {
+                ySteps++;
+            }
+
+            y += ySteps;
 
             level[x][y] = FLOOR;
 
@@ -78,15 +88,18 @@ function generateLevel(string = "default") {
                 }
                 y++;
             }
+            }
 
+
+            if (roomRow < roomRows - 1) {
             //Same but for down
-            x = (roomStats[(roomRow * roomCols) + roomCol][0] + roomStats[(roomRow * roomCols) + roomCol][2]) + (roomRow * MAX_ROOM_SIZE) - 1;
-            y = (roomStats[(roomRow * roomCols) + roomCol][1] + roomStats[(roomRow * roomCols) + roomCol][3] + (roomCol * MAX_ROOM_SIZE)) - 3;
+            x = Math.floor((roomStats[(roomRow * roomCols) + roomCol][0] + roomStats[(roomRow * roomCols) + roomCol][2]) / 2) + (roomRow * MAX_ROOM_SIZE);
+            y = Math.floor((roomStats[(roomRow * roomCols) + roomCol][1] + roomStats[(roomRow * roomCols) + roomCol][3]) / 2) + (roomCol * MAX_ROOM_SIZE);
 
             //Find the wall
             if (level[x][y] !== WALL) {
-                while (level[x][y] !== WALL && x>0) {
-                    x--;
+                while (level[x][y] !== WALL && x < ROWS) {
+                    x++;
                 }
             }
             level[x][y] = FLOOR;
@@ -108,6 +121,8 @@ function generateLevel(string = "default") {
 
             if (x === (ROWS - 1)){
                 level[x][y] = WALL;
+            }
+
             }
         }
     }
