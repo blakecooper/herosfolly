@@ -43,7 +43,10 @@ const MONSTERS = 2;
 const PLAYER_MAP = 3;
 
 const POTIONS_EVERY = 5;
- 
+
+const MAX_NUMBER_HIGH_SCORES = 5;
+let isNewHighScore = false;
+
 let level = 0;
 let play = true;
 let map = "no map loaded";
@@ -56,6 +59,13 @@ let playerMatrix = [];
 let potionsMatrix = [];
 
 let enemies = [];
+
+let cookies = document.cookie;
+let highscores = [];
+
+function $(e) {
+    return document.getElementById(e);
+}
 
 function avoidWalls(axis, value) {
 	let mapDimension = map.length - 1;
@@ -128,6 +138,27 @@ function checkForShards(x,y) {
 	return false;
 }
 
+function displayHighScores() {
+    let alertMsg = "";
+
+    if (isNewHighScore) {
+        alertMsg += "New high score! ";
+    } else {
+        alertMsg += "High scores: ";
+    }
+
+    highscores.sort(function(a, b){return b - a});
+
+    for (let i = 0; i < highscores.length; i++) {
+        alertMsg += highscores[i];
+
+        if (i < (highscores.length-1)) {
+            alertMsg += ",";
+        }
+    }
+
+    alert(alertMsg);
+}
 function drawMap() {
 	
 	$("level").innerHTML = "";
@@ -181,7 +212,7 @@ function drawMonsters() {
 		}
 	}
 
-	for (let row = 0; row < enemiesMatrix.length; row++) {
+ 	for (let row = 0; row < enemiesMatrix.length; row++) {
         for (let col = 0; col < enemiesMatrix[0].length; col++) {
             if (enemiesMatrix[row][col] === MINION || 
                 enemiesMatrix[row][col] === MAXION) {
@@ -347,18 +378,28 @@ function fight(enemyIdx) {
 	}
 
 	if (enemies[enemyIdx].HP < 1) {
-		movePlayerTo(enemies[enemyIdx].X, enemies[enemyIdx].Y);
 		enemies[enemyIdx].X = -1;
 		enemies[enemyIdx].Y = -1;
 		drawMonsters();
 		player.HP++;
+	
+		for (let i = 0; i < enemies[enemyIdx].SHARDS; i++) {
+			pickupShard();
+		}
+
+		return false;
 	}
+
+	return true;
 
 }
 
 async function game() {
 	level++;
 	buildLevel();
+
+  getHighScores();
+
 	while (play) {
 	
 		await waitingKeypress();
@@ -366,7 +407,11 @@ async function game() {
 		if (keyPressed > 0) {
 			loop();
 		}	
-	}	
+	}
+
+    maybeUpdateHighScores();
+
+    displayHighScores();
 }
 
 function getEnemyAt(x,y) {
@@ -379,6 +424,28 @@ function getEnemyAt(x,y) {
 	return -1;
 }
 
+function getHighScores() {
+    const key = "highscores:";
+    
+    if (cookies.length > 0 && cookies.search(key) !== -1) {
+
+        let highscoresString = cookies.substring(cookies.search(key) + key.length);
+
+        let idx = 0;
+
+        while (highscoresString[idx] < highscoresString.length && highscoresString[idx] !== ';') {
+            let score = "";
+            while (highscoresString[idx] !== ',') {
+                score += highscoresString[idx];
+                idx++;
+            }
+
+            highscores.push(parseInt(score));
+            idx++;
+        }
+    }
+}
+
 function getRandomCoordinate(axis) {
 	let mapLimit = map.length;
 
@@ -386,7 +453,7 @@ function getRandomCoordinate(axis) {
 		mapLimit = map[0].length;
 	}
 
-	return avoidWalls(axis, random(mapLimit-1));
+    return avoidWalls(axis, random(mapLimit-1));
 }
 
 function loop() {
@@ -422,33 +489,30 @@ function loop() {
 		proposedPlayerY--;
 	}
 
+	let monsterPresent = false;
+
 	//Complete player's move based on what's in the proposed move square
 	if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
-		fight(getEnemyAt(proposedPlayerX,proposedPlayerY));
-	} else {
-		if (checkForShards(proposedPlayerX,proposedPlayerY)) {
-			pickupShard();	
-			shardsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
-			movePlayerTo(proposedPlayerX,proposedPlayerY);
-		} else if (checkForPotions(proposedPlayerX,proposedPlayerY)){
-			pickupPotion();
-			movePlayerTo(proposedPlayerX,proposedPlayerY);
-			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
-		} else {
-			if (map[proposedPlayerX][proposedPlayerY] === WALL) {
-			} else if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
-			newLevel();
-			} else {
-				movePlayerTo(proposedPlayerX,proposedPlayerY);
-			}
-		}
+		monsterPresent = fight(getEnemyAt(proposedPlayerX,proposedPlayerY));
 	}
 
-	//After dealing with potential monsters, check again for an exit
-	if (map[proposedPlayerX][proposedPlayerY] === EXIT) {
-		newLevel();
-	};	
+	if (!monsterPresent && checkForShards(proposedPlayerX,proposedPlayerY)) {
+		pickupShard();	
+		shardsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+	}
 
+	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
+			pickupPotion();
+			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+	}
+
+	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] === EXIT) {
+			newLevel();
+	}
+	
+	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] !== WALL) {
+		movePlayerTo(proposedPlayerX,proposedPlayerY);
+	}
 
 	//Check for enemies next to player; those enemies attack, others move toward player
 	for (let i = 0; i < enemies.length; i++) {
@@ -472,6 +536,51 @@ function loop() {
 
 }
 
+function maybeUpdateHighScores() {
+
+    if (highscores.length < MAX_NUMBER_HIGH_SCORES) {
+        highscores.push(player.SHARDS);
+        isNewHighScore = true;
+    } else {
+
+        let newHighScore = false;
+
+        for (let i = 0; i < highscores.length; i++) {
+            if (player.SHARDS > highscores[i]) {
+                newHighScore = true;
+            }
+        }
+    
+        if (newHighScore) {
+            isNewHighScore = true;
+            highscores.push(player.SHARDS);
+            let idxLowestScore = -1;
+
+            for (let i = 0; i < highscores.length; i++) {
+                if (i > 0) {
+                    if (highscores[i] < highscores[idxLowestScore]) {
+                        idxLowestScore = i;
+                    }
+                } else {
+                    idxLowestScore = i;
+                }
+            }
+
+            highscores.splice(idxLowestScore, 1);
+        }
+    }
+
+    let newHighscoreString = "highscores:";
+
+    for (let i = 0; i < highscores.length; i++) {
+        newHighscoreString += highscores[i] + ",";
+    }
+
+    newHighscoreString += ";";
+
+    document.cookie = newHighscoreString;
+}
+
 function movePlayerTo(x,y) {
 	playerMatrix[player.X][player.Y] = "&nbsp";
 	playerMatrix[x][y] = PLAYER;
@@ -483,6 +592,11 @@ function movePlayerTo(x,y) {
 function moveEnemyTo(idx,x,y) {
 	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR && enemiesMatrix[x][y] === "&nbsp") {
 		enemiesMatrix[enemies[idx].X][enemies[idx].Y] = "&nbsp";
+		if (checkForShards(x,y)) {
+			enemies[idx].SHARDS++;
+			shardsMatrix[x][y] = "&nbsp";
+		}
+
 		if (enemies[idx].TYPE == MINION) {
 			enemiesMatrix[x][y] = MINION;
 		} else if (enemies[idx].TYPE == MAXION) {
@@ -549,12 +663,12 @@ function spawnMonsters() {
     			    "DEF": STATS.Minion.DEF,
     			    "RESIDUAL_DAMAGE_PENDING": false,
     			    "TYPE": MINION
+              "SHARDS": 0
         		});
         
                 acceptablePlacement = true;
             }
         }
-
 	}
 
 	let numberMaxions = random(level/3);
