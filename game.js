@@ -662,8 +662,8 @@ function spawnMonsters() {
     			    "ATK": STATS.Minion.ATK,
     			    "DEF": STATS.Minion.DEF,
     			    "RESIDUAL_DAMAGE_PENDING": false,
-    			    "TYPE": MINION
-              "SHARDS": 0
+    			    "TYPE": MINION,
+              		    "SHARDS": 0
         		});
         
                 acceptablePlacement = true;
