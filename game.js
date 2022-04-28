@@ -94,20 +94,11 @@ function blankGrid(matrix) {
 
 function buildLevel() {
 	//Pick a random level
-	map = LEVELS[random(LEVELS.length)];
-
-	//Wipe slate from previous level
-	for (let i = 0; i < map.length; i++) {
-		for (let j = 0; j < map[0].length; j++) {
-			if (map[i][j] !== WALL) {
-				map[i][j] = FLOOR;
-			}
-		}
-	}
+	map = generateLevel();
 
 	blankGrid(potionsMatrix);
 
-	spawnMonsters();
+    spawnMonsters();
 
 	spawnShards();
 
@@ -175,7 +166,11 @@ function drawMap() {
 
     	for (let row = 0; row < map.length; row++) {
 		for (let col = 0; col < map[row].length; col++) {
-			html += map[row][col];
+			if (map[row][col] !== null) {
+                html += map[row][col];
+            } else {
+                html += "&nbsp";
+            }
 		}
 		html += "<br>";
 	}
@@ -403,7 +398,7 @@ async function game() {
 	level++;
 	buildLevel();
 
-    getHighScores();
+  getHighScores();
 
 	while (play) {
 	
@@ -629,10 +624,6 @@ function pickupShard() {
 	player.ATK += (2 + Math.floor(level/3));
 }
 
-function random(value) {
-	return Math.floor(Math.random() * value);
-}
-
 function spawnExit() {
 
 	let acceptableExit = false;
@@ -640,7 +631,7 @@ function spawnExit() {
 		let x = getRandomCoordinate(ROW);
 		let y = getRandomCoordinate(COL);		
 
-		if (map[x][y] !== PLAYER) {
+		if (map[x][y] !== null && map[x][y] !== WALL && map[x][y] !== PLAYER) {
 			map[x][y] = EXIT;		
 			acceptableExit = true;
 		}
@@ -657,18 +648,27 @@ function spawnMonsters() {
 	if (numberEnemies === 0) { numberEnemies++; }
 
 	for (let i = 0; i < numberEnemies; i++) {
-		let x = getRandomCoordinate(ROW);
-		let y = getRandomCoordinate(COL);
-		enemies.push({
-			"X": x,
-			"Y": y,
-			"HP": STATS.Minion.HP,
-			"ATK": STATS.Minion.ATK,
-			"DEF": STATS.Minion.DEF,
-			"RESIDUAL_DAMAGE_PENDING": false,
-			"TYPE": MINION,
-			"SHARDS": 0
-		});
+		let acceptablePlacement = false;
+
+        while (!acceptablePlacement) {
+            let x = getRandomCoordinate(ROW);
+		    let y = getRandomCoordinate(COL);
+
+            if (map[x][y] === FLOOR) {
+		        enemies.push({
+    			    "X": x,
+    			    "Y": y,
+    			    "HP": STATS.Minion.HP,
+    			    "ATK": STATS.Minion.ATK,
+    			    "DEF": STATS.Minion.DEF,
+    			    "RESIDUAL_DAMAGE_PENDING": false,
+    			    "TYPE": MINION
+              "SHARDS": 0
+        		});
+        
+                acceptablePlacement = true;
+            }
+        }
 	}
 
 	let numberMaxions = random(level/3);
@@ -703,58 +703,69 @@ function spawnMonsters() {
 }
 
 function spawnPotion() {
-	potionsMatrix = [];
+	potionsMatrix = initializeMatrix(map.length,map[0].length,"&nbsp");
 
-	for (let row = 0; row < map.length; row++) {
-		potionsMatrix.push([]);
-		for (let col = 0; col < map[0].length; col++) {
-			potionsMatrix[row][col] = "&nbsp";
-		}
-	}
+    let acceptablePlacement = false;
 
-	let x = getRandomCoordinate(ROW);
-	let y = getRandomCoordinate(COL);
-	potionsMatrix[x][y] = POTION;
+    while (!acceptablePlacement) {
+
+	    let x = getRandomCoordinate(ROW);
+	    let y = getRandomCoordinate(COL);
+
+        if (map[x][y] === FLOOR) {
+            potionsMatrix[x][y] = POTION;
+            acceptablePlacement = true;
+        }
+
+    }
 }
 
 function spawnPlayer() {
 
-	playerMatrix = [];
+	playerMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
+	
+    let acceptablePlacement = false;
 
-	for (let row = 0; row < map.length; row++) {
-		playerMatrix.push([]);
-		for (let col = 0; col < map[0].length; col++) {
-			playerMatrix[row][col] = "&nbsp";
-		}
-	}
-	//Draw player
-	let x = getRandomCoordinate(ROW);
-	let y = getRandomCoordinate(COL);
-	playerMatrix[x][y] = PLAYER;
-	player.X = x;
-	player.Y = y;
+    while (!acceptablePlacement) {
+        //Draw player
+	    let x = getRandomCoordinate(ROW);
+	    let y = getRandomCoordinate(COL);
+	    
+        if (map[x][y] === FLOOR) {
+            playerMatrix[x][y] = PLAYER;
+	        player.X = x;
+	        player.Y = y;
+
+            acceptablePlacement = true;
+        }
+
+    }
 }
 
 function spawnShards() {
 
-	shardsMatrix = [];
-
+	shardsMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
 	
-    for (let row = 0; row < map.length; row++) {
-        shardsMatrix.push([]);
-        for (let col = 0; col < map[0].length; col++) {
-            shardsMatrix[row][col] = "&nbsp";
-        }
-    }
-	let numberShards = random(level);
+    let numberShards = random(level);
 	
 	//At least one shard should spawn per level
 	if (numberShards == 0) { numberShards = 1 };
 
 	for (let i = 0; i < numberShards; i++) {
-		let x = getRandomCoordinate(ROW);
-		let y = getRandomCoordinate(COL);
-		shardsMatrix[x][y] = SHARD;
+	
+        let acceptablePlacement = false;
+
+        while (!acceptablePlacement) {
+            let x = getRandomCoordinate(ROW);
+		    let y = getRandomCoordinate(COL);
+		    
+            if (map[x][y] === FLOOR) {
+                shardsMatrix[x][y] = SHARD;
+                acceptablePlacement = true;
+            }
+
+            
+        }
 	}
 }
 
