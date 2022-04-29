@@ -104,6 +104,8 @@ function buildLevel() {
 
 	spawnPlayer();
 
+    console.log("Outside of spawnPlayer, player coords are " + player.X + ", " + player.Y);
+    console.log("Mystery x, y coords: " + x + ", " + y);
 	spawnExit();
 
 	if (level % POTIONS_EVERY === 0) {
@@ -111,6 +113,9 @@ function buildLevel() {
 	} 
 
 	drawMap();
+
+    //Have to drawPlayer() one more time (not sure why)
+    //drawPlayer();
 }
 
 function checkForMonsters(x,y) {
@@ -177,10 +182,6 @@ function drawMap() {
 
     	$("level").innerHTML = html;
 
-	drawMonsters();
-	drawShards();
-	drawPlayer();
-
 	html = "";
 
 	//force clear potion layer every floor
@@ -196,6 +197,10 @@ function drawMap() {
 	if (level % POTIONS_EVERY === 0) {
 		drawPotions();
 	}
+	
+    drawMonsters();
+	drawShards();
+	drawPlayer();
 }
 
 function drawMonsters() {
@@ -398,7 +403,7 @@ async function game() {
 	level++;
 	buildLevel();
 
-  getHighScores();
+    getHighScores();
 
 	while (play) {
 	
@@ -489,7 +494,9 @@ function loop() {
 		proposedPlayerY--;
 	}
 
+    //These conditions need to prevent the player from moving (and also updating the player x and y coordinates incorrectly)
 	let monsterPresent = false;
+    let moveDownStairs = false;
 
 	//Complete player's move based on what's in the proposed move square
 	if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
@@ -507,10 +514,11 @@ function loop() {
 	}
 
 	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] === EXIT) {
-			newLevel();
-	}
+			newLevel();	
+            moveDownStairs = true;
+    }
 	
-	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] !== WALL) {
+	if (!monsterPresent && !moveDownStairs && map[proposedPlayerX][proposedPlayerY] !== WALL) {
 		movePlayerTo(proposedPlayerX,proposedPlayerY);
 	}
 
@@ -722,24 +730,31 @@ function spawnPotion() {
 
 function spawnPlayer() {
 
+    blankGrid(playerMatrix);
 	playerMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
 	
     let acceptablePlacement = false;
 
     while (!acceptablePlacement) {
         //Draw player
-	    let x = getRandomCoordinate(ROW);
-	    let y = getRandomCoordinate(COL);
-	    
+	    x = getRandomCoordinate(ROW);
+	    y = getRandomCoordinate(COL);
+	   
         if (map[x][y] === FLOOR) {
             playerMatrix[x][y] = PLAYER;
 	        player.X = x;
 	        player.Y = y;
 
             acceptablePlacement = true;
+            console.log("Player should have spawned at " + x + ", " + y);
+            console.log("Player coordinates are now " + player.X + ", " + player.Y);
+        } else {
+            console.log("Player tried to spawn at " + x + ", " + y);
         }
 
     }
+
+    drawPlayer();
 }
 
 function spawnShards() {
@@ -777,7 +792,6 @@ function waitingKeypress() {
 		if (e.keyCode === parseInt(key)) {
         		document.removeEventListener('keydown', onKeyHandler);
 			keyPressed = e.keyCode;
-        		console.log(KEYMAP[keyPressed]);
 			resolve();
 		}
       }
