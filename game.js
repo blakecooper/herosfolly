@@ -44,7 +44,7 @@ const PLAYER_MAP = 3;
 
 const POTIONS_EVERY = 5;
 
-const MAX_NUMBER_HIGH_SCORES = 5;
+const MAX_NUMBER_HIGH_SCORES = 1;
 let isNewHighScore = false;
 
 let level = 0;
@@ -104,8 +104,6 @@ function buildLevel() {
 
 	spawnPlayer();
 
-    console.log("Outside of spawnPlayer, player coords are " + player.X + ", " + player.Y);
-    console.log("Mystery x, y coords: " + x + ", " + y);
 	spawnExit();
 
 	if (level % POTIONS_EVERY === 0) {
@@ -143,7 +141,7 @@ function checkForShards(x,y) {
 	return false;
 }
 
-function displayHighScores() {
+function displayHighScoresDialog() {
     let alertMsg = "";
 
     if (isNewHighScore) {
@@ -152,18 +150,32 @@ function displayHighScores() {
         alertMsg += "High scores: ";
     }
 
-    highscores.sort(function(a, b){return b - a});
 
     for (let i = 0; i < highscores.length; i++) {
         alertMsg += highscores[i];
 
         if (i < (highscores.length-1)) {
-            alertMsg += ",";
+            alertMsg += " ";
         }
     }
 
     alert(alertMsg);
 }
+
+function drawHighScores() {
+
+    $("highscores").innerHTML = "";
+    let html = "High Score: ";
+
+    highscores.sort(function(a, b){return b - a});
+
+    for (let i = 0; i < highscores.length; i++) {
+        html += highscores[i] + "<br>";
+    }
+
+    $("highscores").innerHTML = html;
+}
+
 function drawMap() {
 	
 	$("level").innerHTML = "";
@@ -416,7 +428,9 @@ async function game() {
 
     maybeUpdateHighScores();
 
-    displayHighScores();
+    if (isNewHighScore) {
+        displayHighScoresDialog();
+    }
 }
 
 function getEnemyAt(x,y) {
@@ -466,7 +480,8 @@ function loop() {
 	//Update map and stats
 	drawStatus("");
 	drawStats();
-	drawMap();
+    drawHighScores();
+    drawMap();
 
 	//Get coordinates of proposed player move
 	let proposedPlayerX = player.X;
@@ -629,7 +644,7 @@ function pickupPotion() {
 
 function pickupShard() {
 	player.SHARDS++;
-	player.ATK += (2 + Math.floor(level/3));
+	player.ATK += (1 + Math.floor(level/3));
 }
 
 function spawnExit() {
@@ -746,10 +761,7 @@ function spawnPlayer() {
 	        player.Y = y;
 
             acceptablePlacement = true;
-            console.log("Player should have spawned at " + x + ", " + y);
-            console.log("Player coordinates are now " + player.X + ", " + player.Y);
         } else {
-            console.log("Player tried to spawn at " + x + ", " + y);
         }
 
     }
@@ -761,7 +773,7 @@ function spawnShards() {
 
 	shardsMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
 	
-    let numberShards = random(level);
+    let numberShards = random(level + 10);
 	
 	//At least one shard should spawn per level
 	if (numberShards == 0) { numberShards = 1 };
