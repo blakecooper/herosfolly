@@ -1,10 +1,14 @@
 let STATS = {
 	"Player": {
 		"BASE_HP":20,
+        "BASE_DEF":10,
+        "BASE_ATK":5,
 		"HP":20,
 		"DEF":10,
 		"ATK":5,
 		"SHARDS":0,
+        "DETERIORATING":false,
+        "DETERIORATION":0,
 		"X":-1,
 		"Y":-1
 	},
@@ -18,8 +22,8 @@ let STATS = {
 	"Maxion": {
 		"BASE_HP":18,
 		"HP":18,
-		"DEF":8,
-		"ATK":8,
+		"DEF":7,
+		"ATK":6,
 		"SHARDS":0
 	}
 }
