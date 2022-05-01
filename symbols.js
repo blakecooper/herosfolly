@@ -6,3 +6,4 @@ const MAXION = "M";
 const EXIT = "x";
 const SHARD = "*";
 const POTION = "%";
+const BUFF = "!";

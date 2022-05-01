@@ -1,71 +1,25 @@
-const BASE_ENEMIES_PER_FLOOR = 4;
-
-const LEFT = 0;
-const RIGHT = 1;
-const DOWN = 2;
-const UP = 3;
-const UPLEFT = 4;
-const UPRIGHT = 5;
-const DOWNLEFT = 6;
-const DOWNRIGHT = 7;
-const WAIT = 8;
-
-const KEYMAP = {
-	"37": LEFT,
-	"38": UP,
-	"39": RIGHT,
-	"40": DOWN,
-	"49": DOWNLEFT,
-	"50": DOWN,
-	"51": DOWNRIGHT,
-	"52": LEFT,
-	"54": RIGHT,
-	"55": UPLEFT,
-	"56": UP,
-	"57": UPRIGHT,
-	"97": DOWNLEFT,
-	"98": DOWN,
-	"99": DOWNRIGHT,
-	"100": LEFT,
-	"102": RIGHT,
-	"103": UPLEFT,
-	"104": UP,
-	"105": UPRIGHT,
-	"190": WAIT
-};
-
-const ROW = 0;
-const COL = 1;
-
-const MAP = 0;
-const SHARDS = 1;
-const MONSTERS = 2;
-const PLAYER_MAP = 3;
-
-const POTIONS_EVERY = 5;
-
-const MAX_NUMBER_HIGH_SCORES = 1;
-let isNewHighScore = false;
+let cookies = document.cookie;
 
 let level = 0;
-let play = true;
-let map = "no map loaded";
-let player = STATS.Player; 
-let keyPressed = -1;
+let highscores = [];
+let isNewHighScore = false;
 
 let enemiesMatrix = [];
 let shardsMatrix = [];
 let playerMatrix = [];
 let potionsMatrix = [];
+let buffsMatrix = [];
 
+let map = "no map loaded";
+
+let player = STATS.Player; 
 let enemies = [];
 
-let cookies = document.cookie;
-let highscores = [];
+let keyPressed = -1;
+let play = true;
+let steps = 0;
 
-function $(e) {
-    return document.getElementById(e);
-}
+let statusQueue = [];
 
 function avoidWalls(axis, value) {
 	let mapDimension = map.length - 1;
@@ -83,14 +37,6 @@ function avoidWalls(axis, value) {
 	}
 }
 
-function blankGrid(matrix) {
-
-	for (let row = 0; row < matrix.length; row++) {
-		for (let col = 0; col < matrix[0].length; col++) {
-			matrix[row][col] = "&nbsp";
-		}
-	}
-}
 
 function buildLevel() {
 	//Pick a random level
@@ -104,16 +50,35 @@ function buildLevel() {
 
 	spawnPlayer();
 
+    //Get rid of any monsters right next to player
+    for (let row = player.X - 1; row < player.X + 2; row++) {
+        for (let col = player.Y - 1; col < player.Y + 2; col++) {
+            if (enemiesMatrix[row][col] === MINION || enemiesMatrix[row][col] === MAXION) {
+                enemiesMatrix[row][col] = "&nbsp";
+
+                for (let i = 0; i < enemies.length; i++) {
+                    if (enemies[i].X === row && enemies[i].Y === col) {
+                        enemies[i].X = -1;
+                        enemies[i].Y = -1;
+                    }
+                }
+            }
+        }
+    }
+
 	spawnExit();
 
 	if (level % POTIONS_EVERY === 0) {
 		spawnPotion();
-	} 
+	}
+
+    if (random(10) < 1) {
+        spawnBuffs();
+    } else {
+        buffsMatrix = initializeMatrix(ROWS, COLS, "&nbsp");
+    }
 
 	drawMap();
-
-    //Have to drawPlayer() one more time (not sure why)
-    //drawPlayer();
 }
 
 function checkForMonsters(x,y) {
@@ -131,6 +96,14 @@ function checkForPotions(x,y) {
 	}
 
 	return false;
+}
+
+function checkForBuffs(x,y) {
+    if (buffsMatrix[x][y] === BUFF) {
+        return true;
+    }
+
+    return false;
 }
 
 function checkForShards(x,y) {
@@ -176,6 +149,27 @@ function drawHighScores() {
     $("highscores").innerHTML = html;
 }
 
+function drawBuffs() {
+	$("buffs").innerHTML = "";
+	let html = "";
+
+	for (let row = 0; row < buffsMatrix.length; row++) {
+		for (let col = 0; col < buffsMatrix[0].length; col++) {
+			if (buffsMatrix[row][col] === BUFF) {
+				html += "<span class='background'>";
+			}
+
+			html += buffsMatrix[row][col];
+			
+			if (buffsMatrix[row][col] === BUFF) {
+				html += "</span>";
+			}
+		}
+		html += "<br>";
+	} 
+	$("buffs").innerHTML = html;
+
+}
 function drawMap() {
 	
 	$("level").innerHTML = "";
@@ -212,7 +206,8 @@ function drawMap() {
 	
     drawMonsters();
 	drawShards();
-	drawPlayer();
+    drawBuffs();
+    drawPlayer();
 }
 
 function drawMonsters() {
@@ -269,26 +264,6 @@ function drawPotions() {
 	$("potions").innerHTML = html;
 }
 
-function drawPlayer() {
-	$("player").innerHTML = "";
-	let html = "";
-
-	for (let row = 0; row < playerMatrix.length; row++) {
-		for (let col = 0; col < playerMatrix[0].length; col++) {
-			if (playerMatrix[row][col] === PLAYER) {
-				html += "<span class='background'>";
-			}
-
-			html += playerMatrix[row][col];
-
-			if (playerMatrix[row][col] === PLAYER) {
-				html += "</span>";
-			}
-		}
-		html += "<br>";
-	}
-	$("player").innerHTML = html;
-}
 
 function drawShards() {
 	$("shards").innerHTML = "";
@@ -313,24 +288,65 @@ function drawShards() {
 	$("shards").innerHTML = html;
 }
 
+function damageSpan() {
+
+    let html = "";
+
+    if (player.HP < player.BASE_HP) {
+        html = "<span class=";
+
+        if (player.HP < (player.BASE_HP / 3)) {
+            html += "red";
+        } else {
+            html += "yellow";
+        }
+
+        html += ">";
+
+    }
+    
+    return html;
+}
+
+function closeSpan() {
+    if (player.HP < player.BASE_HP) {
+        return "</span>";
+    } else {
+        return "";
+    }
+}
+
 function drawStats() {
 	$("stats").innerHTML = "Player HP: " 
+        + damageSpan()
 		+ player.HP
+        + closeSpan()
 		+ " ATK: "
 		+ player.ATK
 		+ " DEF: "
 		+ player.DEF
-		+ " Shards collected: "
-		+ player.SHARDS;
+        + " Shards: "
+		+ player.SHARDS
+        + " Steps: "
+        + steps
+        + "<br>DLVL: " 
+        + level;
+}
+
+function clearStatus() {
+    $("status").innerHTML = "";
 }
 
 function drawStatus(message) {
-	$("status").innerHTML = message;
+    $("status").innerHTML = message;
+    let timeout = setTimeout(function() {
+        clearStatus();
+    }, 2000);
 }
 
 function enemyAttack(idx) {
 	let enemyHit = Math.floor(Math.random() * 20) > player.DEF;
-	let dmgToPlayer = enemies[idx].ATK + Math.floor(Math.random() * 2);
+	let dmgToPlayer = random(enemies[idx].ATK) + 1;
 
 	let enemyName = "minion";
 
@@ -398,7 +414,9 @@ function fight(enemyIdx) {
 		enemies[enemyIdx].X = -1;
 		enemies[enemyIdx].Y = -1;
 		drawMonsters();
-		player.HP++;
+        if (random(2) < 1 && player.HP < player.BASE_HP) {
+            player.HP++;
+        }
 	
 		for (let i = 0; i < enemies[enemyIdx].SHARDS; i++) {
 			pickupShard();
@@ -478,7 +496,6 @@ function getRandomCoordinate(axis) {
 function loop() {
 	
 	//Update map and stats
-	drawStatus("");
 	drawStats();
     drawHighScores();
     drawMap();
@@ -509,6 +526,8 @@ function loop() {
 		proposedPlayerY--;
 	}
 
+    steps++;
+
     //These conditions need to prevent the player from moving (and also updating the player x and y coordinates incorrectly)
 	let monsterPresent = false;
     let moveDownStairs = false;
@@ -524,13 +543,18 @@ function loop() {
 	}
 
 	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
-			pickupPotion();
-			potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+		pickupPotion();
+		potionsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
 	}
 
+    if (!monsterPresent && checkForBuffs(proposedPlayerX, proposedPlayerY)) {
+        pickupBuff();
+        buffsMatrix[proposedPlayerX][proposedPlayerY] = "&nbsp";
+    }
+
 	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] === EXIT) {
-			newLevel();	
-            moveDownStairs = true;
+		newLevel();	
+        moveDownStairs = true;
     }
 	
 	if (!monsterPresent && !moveDownStairs && map[proposedPlayerX][proposedPlayerY] !== WALL) {
@@ -543,7 +567,7 @@ function loop() {
 		if ((enemies[i].X > 0 && enemies[i].Y > 0) && (Math.abs(player.X - enemies[i].X) < 2) && (Math.abs(player.Y - enemies[i].Y) < 2)) {
 			enemyAttack(i);
 		} else {
-			if (random(20) > 1) {
+			if (enemies[i].TYPE === MAXION || random(20) > 1) {
 				enemyMoves(i);
 			}	
 		}	
@@ -633,18 +657,46 @@ function moveEnemyTo(idx,x,y) {
 
 function newLevel() {
 	level++;
-	buildLevel();
+    buildLevel();
+	
+    if (player.DETERIORATING) {
+        playerDeteriorates();
+    }
+}
+
+function pickupBuff() {
+    player.SHARDS++;
+    playerBuffed();
+    player.DETERIORATING = true;
 }
 
 function pickupPotion() {
-	if (player.HP < STATS.Player.BASE_HP) {
-		player.HP = STATS.Player.BASE_HP;
-	}
+    player.SHARDS++;
+    playerCured();
 }
 
 function pickupShard() {
 	player.SHARDS++;
-	player.ATK += (1 + Math.floor(level/3));
+    if (player.SHARDS % 10 === 0) {
+        player.BASE_ATK++;
+    }
+    player.ATK = player.BASE_ATK;
+}
+
+function spawnBuffs() {
+    buffsMatrix = initializeMatrix(ROWS, COLS, "&nbsp");
+
+    let acceptablePlacement = false;
+
+    while (!acceptablePlacement) {
+		let x = getRandomCoordinate(ROW);
+		let y = getRandomCoordinate(COL);
+
+        if (map[x][y] !== null && map[x][y] === FLOOR) {
+            buffsMatrix[x][y] = BUFF;
+            acceptablePlacement = true;
+        }
+    }
 }
 
 function spawnExit() {
@@ -666,7 +718,7 @@ function spawnMonsters() {
 	enemies = [];
     enemiesMatrix = [];
 
-    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + (level/3));
+    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + (2 * (level/3)));
 
 	if (numberEnemies === 0) { numberEnemies++; }
 
@@ -681,9 +733,9 @@ function spawnMonsters() {
 		        enemies.push({
     			    "X": x,
     			    "Y": y,
-    			    "HP": STATS.Minion.HP,
-    			    "ATK": STATS.Minion.ATK,
-    			    "DEF": STATS.Minion.DEF,
+    			    "HP": STATS.Minion.HP + Math.ceil(level/5),
+    			    "ATK": STATS.Minion.ATK + Math.ceil(level/5),
+    			    "DEF": STATS.Minion.DEF + Math.ceil(level/5),
     			    "RESIDUAL_DAMAGE_PENDING": false,
     			    "TYPE": MINION,
               		    "SHARDS": 0
@@ -703,9 +755,9 @@ function spawnMonsters() {
 
 		for (let i = 0; i < numberMaxions; i++) {
 			enemies[i].TYPE = MAXION;
-			enemies[i].HP = STATS.Maxion.HP;
-			enemies[i].ATK = STATS.Maxion.ATK;
-			enemies[i].DEF = STATS.Maxion.DEF;
+			enemies[i].HP = STATS.Maxion.HP + Math.ceil(level/5);
+			enemies[i].ATK = STATS.Maxion.ATK + Math.ceil(level/5);
+			enemies[i].DEF = STATS.Maxion.DEF + Math.ceil(level/5);
 		}
 	}
 
@@ -743,42 +795,11 @@ function spawnPotion() {
     }
 }
 
-function spawnPlayer() {
-
-    blankGrid(playerMatrix);
-	playerMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
-	
-    let acceptablePlacement = false;
-
-    while (!acceptablePlacement) {
-        //Draw player
-	    x = getRandomCoordinate(ROW);
-	    y = getRandomCoordinate(COL);
-	   
-        if (map[x][y] === FLOOR) {
-            playerMatrix[x][y] = PLAYER;
-	        player.X = x;
-	        player.Y = y;
-
-            acceptablePlacement = true;
-        } else {
-        }
-
-    }
-
-    drawPlayer();
-}
-
 function spawnShards() {
 
 	shardsMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
 	
-    let numberShards = random(level + 10);
-	
-	//At least one shard should spawn per level
-	if (numberShards == 0) { numberShards = 1 };
-
-	for (let i = 0; i < numberShards; i++) {
+	for (let i = 0; i < SHARDS_PER_FLOOR; i++) {
 	
         let acceptablePlacement = false;
 
@@ -793,7 +814,7 @@ function spawnShards() {
 
             
         }
-	}
+    }
 }
 
 function waitingKeypress() {
