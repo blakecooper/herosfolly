@@ -29,6 +29,11 @@ function random(value) {
 	return Math.floor(Math.random() * value);
 }
 
+function refreshScreen() {
+    drawMap();
+    drawStats();
+}
+
 function updateUIColor(palette) {
     document.querySelector("body").style.color = palette[player.DETERIORATION];
 }

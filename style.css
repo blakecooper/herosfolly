@@ -47,32 +47,33 @@ body {
 
 .map {
     position: absolute;
-    width: 70%;
+    width: 50%;
     height: 100%;
 }
 
-#status {
+#statsWide {
     position: absolute;
-    right: 30%;
+    left: 40%;
+    top: 5%;
+    height: 5%;
+    width: 30%;
+}
+
+#statsTall {
+    display: none;
+    position: absolute;
+    right: 40%;
     top: 15%;
     height: 5%;
     width: 30%;
 }
 
-#stats {
+#status {
     position: absolute;
-    right: 30%;
-    top: 0%;
+    left: 40%;
+    top: 35%;
     height: 10%;
     width: 30%;
-}
-
-#highscores {
-    position: absolute;
-    right: 30%;
-    top: 25%;
-    width: 30%;
-    height: 60%;
 }
 
 @media only screen and (max-width: 1000px) {
@@ -90,21 +91,12 @@ body {
     height: 5%;
 }
 
-#stats {
+#statusTall {
     position: absolute;
-    left: 0%;
-    top: 85%;
+    right: 0%;
+    top: 15%;
     height: 5%;
-    width: 100%;
+    width: 30%;
 }
-
-#highscores {
-    position: absolute;
-    top: 95%;
-    left: 0%;
-    width: 100%;
-    height: 5%;
-}
-
 }
 

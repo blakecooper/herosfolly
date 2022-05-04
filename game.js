@@ -15,6 +15,8 @@ let map = "no map loaded";
 let player = STATS.Player; 
 let enemies = [];
 
+let shardsOnLevel = 0;
+
 let keyPressed = -1;
 let play = true;
 let steps = 0;
@@ -43,10 +45,10 @@ function buildLevel() {
 	map = generateLevel();
 
 	blankGrid(potionsMatrix);
+	
+    spawnExit();
 
     spawnMonsters();
-
-	spawnShards();
 
 	spawnPlayer();
 
@@ -66,7 +68,7 @@ function buildLevel() {
         }
     }
 
-	spawnExit();
+	spawnShards();
 
 	if (level % POTIONS_EVERY === 0) {
 		spawnPotion();
@@ -133,20 +135,6 @@ function displayHighScoresDialog() {
     }
 
     alert(alertMsg);
-}
-
-function drawHighScores() {
-
-    $("highscores").innerHTML = "";
-    let html = "High Score: ";
-
-    highscores.sort(function(a, b){return b - a});
-
-    for (let i = 0; i < highscores.length; i++) {
-        html += highscores[i] + "<br>";
-    }
-
-    $("highscores").innerHTML = html;
 }
 
 function drawBuffs() {
@@ -317,19 +305,35 @@ function closeSpan() {
 }
 
 function drawStats() {
-	$("stats").innerHTML = "Player HP: " 
+
+	$("statsWide").innerHTML = "HP: " 
         + damageSpan()
 		+ player.HP
         + closeSpan()
-		+ " ATK: "
+        + "<br>ATK: "
 		+ player.ATK
-		+ " DEF: "
+        + "<br>DEF: "
 		+ player.DEF
-        + " Shards: "
+        + "<br>SHARDS: "
 		+ player.SHARDS
-        + " Steps: "
-        + steps
+        + "<br>TOP: "
+        + highscores[0];
         + "<br>DLVL: " 
+        + level;
+	
+    $("statsTall").innerHTML = "HP: " 
+        + damageSpan()
+		+ player.HP
+        + closeSpan()
+        + " ATK: "
+		+ player.ATK
+        + " DEF: "
+		+ player.DEF
+        + " SHARDS: "
+		+ player.SHARDS
+        + " TOP: "
+        + highscores[0];
+        + " DLVL: " 
         + level;
 }
 
@@ -341,11 +345,11 @@ function drawStatus(message) {
     $("status").innerHTML = message;
     let timeout = setTimeout(function() {
         clearStatus();
-    }, 2000);
+    }, 1000 * SECONDS_DISPLAY_STATUS);
 }
 
 function enemyAttack(idx) {
-	let enemyHit = Math.floor(Math.random() * 20) > player.DEF;
+	let enemyHit = Math.floor((Math.random() * 20) + (level / 3)) > player.DEF;
 	let dmgToPlayer = random(enemies[idx].ATK) + 1;
 
 	let enemyName = "minion";
@@ -430,10 +434,13 @@ function fight(enemyIdx) {
 }
 
 async function game() {
-	level++;
+
+    level++;
 	buildLevel();
 
     getHighScores();
+    
+    setInterval(refreshScreen, (1000 / FPS));
 
 	while (play) {
 	
@@ -447,8 +454,10 @@ async function game() {
     maybeUpdateHighScores();
 
     if (isNewHighScore) {
-        displayHighScoresDialog();
+        drawStatus("New high score!");
     }
+
+    clearInterval();
 }
 
 function getEnemyAt(x,y) {
@@ -456,7 +465,7 @@ function getEnemyAt(x,y) {
 		if (enemies[i].X === x && enemies[i].Y === y) {
 			return i;
 		}
-	}
+    }
 
 	return -1;
 }
@@ -495,10 +504,6 @@ function getRandomCoordinate(axis) {
 
 function loop() {
 	
-	//Update map and stats
-	drawStats();
-    drawHighScores();
-    drawMap();
 
 	//Get coordinates of proposed player move
 	let proposedPlayerX = player.X;
@@ -576,7 +581,6 @@ function loop() {
 	//Check to see if player has died during the loop
 	if (player.HP < 1) {
 		player.HP = 0;
-		drawStats();
 		play = false;
 		drawStatus("You died.");
 	}
@@ -625,7 +629,7 @@ function maybeUpdateHighScores() {
 
     newHighscoreString += ";";
 
-    document.cookie = newHighscoreString;
+    document.cookie = newHighscoreString + "SameSite=Strict;";
 }
 
 function movePlayerTo(x,y) {
@@ -665,20 +669,21 @@ function newLevel() {
 }
 
 function pickupBuff() {
-    player.SHARDS++;
     playerBuffed();
     player.DETERIORATING = true;
 }
 
 function pickupPotion() {
-    player.SHARDS++;
     playerCured();
 }
 
 function pickupShard() {
 	player.SHARDS++;
-    if (player.SHARDS % 10 === 0) {
+    shardsOnLevel--;
+
+    if (shardsOnLevel === 0) {
         player.BASE_ATK++;
+        drawStatus("Level cleared! ATK up!");
     }
     player.ATK = player.BASE_ATK;
 }
@@ -718,9 +723,9 @@ function spawnMonsters() {
 	enemies = [];
     enemiesMatrix = [];
 
-    let numberEnemies = random(BASE_ENEMIES_PER_FLOOR + (2 * (level/3)));
+    let numberEnemies = 2 * random(level + 1);
 
-	if (numberEnemies === 0) { numberEnemies++; }
+	if (numberEnemies === 0) { numberEnemies = level; }
 
 	for (let i = 0; i < numberEnemies; i++) {
 		let acceptablePlacement = false;
@@ -798,22 +803,22 @@ function spawnPotion() {
 function spawnShards() {
 
 	shardsMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
-	
-	for (let i = 0; i < SHARDS_PER_FLOOR; i++) {
-	
+    while (shardsOnLevel < SHARDS_PER_LEVEL) {
         let acceptablePlacement = false;
 
         while (!acceptablePlacement) {
             let x = getRandomCoordinate(ROW);
 		    let y = getRandomCoordinate(COL);
 		    
-            if (map[x][y] === FLOOR) {
+            if (map[x][y] === FLOOR && playerMatrix[x][y] !== PLAYER && enemiesMatrix[x][y] === "&nbsp") {
                 shardsMatrix[x][y] = SHARD;
                 acceptablePlacement = true;
+                shardsOnLevel++;
             }
 
             
         }
+
     }
 }
 

@@ -2,7 +2,7 @@
 const BASE_ENEMIES_PER_FLOOR = 4;
 
 //Number of shards per floor
-const SHARDS_PER_FLOOR = 10;
+const SHARDS_PER_LEVEL = 10;
 
 //In the future, this will hold color change spectra for various effects
 const PALETTES = {
@@ -47,3 +47,7 @@ const KEYMAP = {
 const MAX_NUMBER_HIGH_SCORES = 1;
 
 const deteriorationDamage = [1, 1, 2, 3, 5, 8, 13, 21];
+
+const FPS = 25;
+
+const SECONDS_DISPLAY_STATUS = 3;
