@@ -18,3 +18,8 @@ const MONSTERS = 2;
 const PLAYER_MAP = 3;
 
 const POTIONS_EVERY = 5;
+
+const SPACE = "&nbsp";
+
+const BACKGROUND = 0;
+const TEXT = 1;
