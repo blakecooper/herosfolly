@@ -1,38 +1,28 @@
-function drawPlayer() {
-	$("player").innerHTML = "";
-	let html = "";
-
-	for (let row = 0; row < playerMatrix.length; row++) {
-		for (let col = 0; col < playerMatrix[0].length; col++) {
-			if (playerMatrix[row][col] === PLAYER) {
-				html += "<span class='background'>";
-			}
-
-			html += playerMatrix[row][col];
-
-			if (playerMatrix[row][col] === PLAYER) {
-				html += "</span>";
-			}
-		}
-		html += "<br>";
-	}
-	$("player").innerHTML = html;
+function playerDeteriorates() {
+    if (player.DETERIORATION < PALETTES.deteriorate.length) {
+        player.DETERIORATION++;
+        updateUIColor(BACKGROUND, PALETTES.deteriorate);
+    } else {
+        player.BASE_HP--;
+        if (player.HP > player.BASE_HP) {
+            player.HP = player.BASE_HP;
+        }
+        player.ATK--;
+        player.DEF--;
+        drawStatus("You are deteriorating! Losing HP, ATK and DEF.");
+    }
 }
 
-function playerDeteriorates() {
-    player.DETERIORATION++;
-
-    if ((player.DETERIORATION - 1) > -1 && player.DETERIORATION > 9) {
-        if (player.DETERIORATION - 10 < deteriorationDamage.length) {
-            player.HP -= deteriorationDamage[player.DETERIORATION - 10];
-        } else {
-            player.HP -= deteriorationDamage[deteriorationDamage.length - 1];
+function playerLeeches() {
+    if (player.LEECH < PALETTES.leeching.length) {
+        player.LEECH++;
+        updateUIColor(TEXT, PALETTES.leeching);
+    } else {
+        if (random(2) > 0) {
+            player.HP = player.HP - 5;
+            drawStatus("Your lifeforce is leeching away! Lost 5 HP!");
         }
-    
-        drawStatus("You feel sick!");
     }
-
-    updateUIColor(PALETTES.deteriorate);
 }
 
 function playerBuffed() {
@@ -45,7 +35,7 @@ function playerBuffed() {
     }
 
     drawStatus("Player buffed! Max HP and DEF up!");
-    updateUIColor(PALETTES.deteriorate);
+    updateUIColor(BACKGROUND, PALETTES.deteriorate);
 }
 
 function playerCured() {
@@ -53,13 +43,14 @@ function playerCured() {
 		player.HP = player.BASE_HP;
     }
 
+    player.LEECH = 0;
+    updateUIColor(TEXT, PALETTES["leeching"]);
     drawStatus("You feel better! HP restored!");
 }
 
 function spawnPlayer() {
 
-    blankGrid(playerMatrix);
-	playerMatrix = initializeMatrix(map.length, map[0].length, "&nbsp");
+	Matrix[PLAYER] = initializeMatrix(ROWS, COLS, "&nbsp");
 	
     let acceptablePlacement = false;
 
@@ -68,7 +59,7 @@ function spawnPlayer() {
 	    y = getRandomCoordinate(COL);
 	   
         if (map[x][y] === FLOOR) {
-            playerMatrix[x][y] = PLAYER;
+            Matrix[PLAYER][x][y] = PLAYER;
 	        player.X = x;
 	        player.Y = y;
 
@@ -78,5 +69,4 @@ function spawnPlayer() {
 
     }
 
-    drawPlayer();
 }

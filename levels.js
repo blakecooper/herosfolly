@@ -2,7 +2,7 @@ let LEVELS = [];
 const MIN_ROOM_SIZE = 5;
 const MAX_ROOM_SIZE = 8;
 const ROWS = 16;
-const COLS = 32;
+const COLS = 40;
 
 function stringToHash(string) {
                   
@@ -118,6 +118,11 @@ function generateLevel(string = "default") {
 
     let level = initializeMatrix(ROWS, COLS, null);
 
+    let allConnected = false;
+
+    while (!allConnected) {
+
+
     let roomStats = [];
  
     let roomRows = Math.floor(ROWS/MAX_ROOM_SIZE);
@@ -183,7 +188,20 @@ function generateLevel(string = "default") {
     }
    
     level = generateHallways(level, roomStats, roomRows, roomCols);
-    
+
+    if (isConnected(level)) {
+        allConnected = true;
+    }
+    }
+
+    //Replace the null values with spaces
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            if (level[row][col] === null) {
+                level[row][col] = SPACE;
+            }
+        }
+    }
     return level;
 }
 
@@ -205,4 +223,55 @@ function generateRoom() {
 
 
     return room;
+}
+
+function isConnected(level) {
+    let connected = initializeMatrix(ROWS, COLS, false);
+
+    let isFloor = false;
+
+    let x = 0;
+    let y = 0;
+
+    while (!isFloor) {
+        x = getRandomCoordinate(ROWS);
+        y = getRandomCoordinate(COLS);
+
+        if (level[x][y] === FLOOR) {
+            isFloor = true;
+        }
+    }
+
+    let floorList = [];
+
+    floorList.push([x,y]);
+    connected[x][y] = true;
+
+
+    while (floorList.length > 0) {
+        let coords = floorList.pop();
+        let checkX = coords[0];
+        let checkY = coords[1];
+        
+        for (let row = (checkX-1); row < checkX+2; row++) {
+            for (let col = (checkY-1); col < checkY+2; col++){
+                if (row !== checkX || col !== checkY) {
+                    if (level[row][col] === FLOOR && !connected[row][col]) {
+                        connected[row][col] = true;
+                        floorList.push([row,col]);
+                    }
+                }
+            }
+        }
+    }
+
+    for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+            if (level[row][col] === FLOOR && connected[row][col] === false) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

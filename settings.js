@@ -1,22 +1,39 @@
 //Minimum number of potential monsters per floor
 const BASE_ENEMIES_PER_FLOOR = 4;
 
+const MINION_BASE_HP = 10;
+const MINION_BASE_ATK = 4; 
+const MINION_BASE_DEF = 3;
+
+const MAXION_BASE_HP = 22;
+const MAXION_BASE_ATK = 6;
+const MAXION_BASE_DEF = 6;
+
 //Number of shards per floor
 const SHARDS_PER_LEVEL = 10;
 
 //In the future, this will hold color change spectra for various effects
 const PALETTES = {
     "deteriorate": [
-        "#FFFFFF",
-        "#E3E3FF",  
-        "#C6C6FF",
-        "#AAAAFF",
-        "#8E8EFF",
-        "#7171FF",
-        "#5555FF",
-        "#3939FF",
-        "#1C1CFF", 
+        "#000000",
+        "#00001C",  
+        "#000039",
+        "#000055",
+        "#000071",
+        "#00008E",
+        "#0000AA",
+        "#0000C6",
+        "#0000E3", 
         "#0000FF"
+    ],
+    "leeching": [
+        "#FFFFFF",
+        "#D5FFD5",
+        "#AAFFAA",
+        "#80FF80",
+        "#55FF55",
+        "#2BFF2B",
+        "#00FF00"
     ]
 };
 
@@ -29,6 +46,7 @@ const KEYMAP = {
 	"50": DOWN,
 	"51": DOWNRIGHT,
 	"52": LEFT,
+    "52": WAIT,
 	"54": RIGHT,
 	"55": UPLEFT,
 	"56": UP,
@@ -48,6 +66,6 @@ const MAX_NUMBER_HIGH_SCORES = 1;
 
 const deteriorationDamage = [1, 1, 2, 3, 5, 8, 13, 21];
 
-const FPS = 25;
+const FPS = 24;
 
 const SECONDS_DISPLAY_STATUS = 3;
