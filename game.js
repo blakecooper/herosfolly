@@ -85,12 +85,11 @@ function buildLevel() {
 	spawnPlayer();
 
     //Get rid of any monsters right next to player
-    for (let row = player.X - 1; row < player.X + 2; row++) {
-        for (let col = player.Y - 1; col < player.Y + 2; col++) {
+    for (let row = (player.X - 1); row < (player.X + 2); row++) {
+        for (let col = (player.Y - 1); col < (player.Y + 2); col++) {
             if (Matrix[MINION][row][col] === MINION || Matrix[MINION][row][col] === MAXION) {
                 
                 relocateMonsterAtIdx(getEnemyAt(row, col));
-                Matrix[MINION][row][col] = SPACE;
             }
         }
     }
@@ -182,7 +181,7 @@ async function game() {
 function loop() {
 
     if (player.SHARDS !== 0 &&
-        (player.SHARDS + steps) % 77 === 0) {
+        (player.SHARDS + steps) % 777 === 0) {
         randomRegen();
     }
 
@@ -334,21 +333,33 @@ function spawnExit() {
 		let x = getRandomCoordinate(ROWS);
 		let y = getRandomCoordinate(COLS);		
 
+        //Exit shouldn't be within 1 of map edge
+        if (x < 2) {
+            x = 2;
+        }
+
+        if (y < 2) {
+            y = 2;
+        }
+
 		if (map[x][y] !== null && map[x][y] === FLOOR && noEntitiesOnSquare(x,y)) {
-		    let numberFloorsAdjacent = 0;
+            
+           
+            let numberFloorsNearby = 0;
 
             for (let row = (x-1); row < (x+2); row++) {
-                for (let col = (y-1); col < (x+2); col++) {
+                for (let col = (y-1); col < (y+2); col++) {
                     if ((row !== x || col !== y) && map[row][col] === FLOOR) {
-                        numberFloorsAdjacent++;
+                        numberFloorsNearby++;
                     }
                 }
             }
-            
-            if (numberFloorsAdjacent > 4) {
+
+            if (numberFloorsNearby > 5) {
                 map[x][y] = EXIT;		
 			    acceptableExit = true;
             }
+            
 		}
 	}
 }
@@ -357,8 +368,8 @@ function spawnMonsters() {
 
 	enemies = [];
 
-    let numberMinions = level % 10;
-	let numberMaxions = Math.floor(level/10);
+    let numberMinions = level % 5;
+	let numberMaxions = Math.floor(level/5);
 
 	for (let i = 0; i < numberMinions + numberMaxions; i++) {
 		let acceptablePlacement = false;

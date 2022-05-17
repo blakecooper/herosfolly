@@ -55,6 +55,7 @@ const KEYMAP = {
 	"98": DOWN,
 	"99": DOWNRIGHT,
 	"100": LEFT,
+    "101": WAIT,
 	"102": RIGHT,
 	"103": UPLEFT,
 	"104": UP,

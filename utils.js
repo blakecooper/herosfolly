@@ -178,7 +178,7 @@ function relocateMonsterAtIdx(i) {
         let x = getRandomCoordinate(ROWS);
         let y = getRandomCoordinate(COLS);
 
-        if (map[x][y] === FLOOR) {
+        if (map[x][y] === FLOOR && noEntitiesOnSquare(x, y)) {
             enemies[i].X = x;
             enemies[i].Y = y;
             acceptablePlacement = true;
