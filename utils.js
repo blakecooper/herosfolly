@@ -1,3 +1,5 @@
+let isMobile = false;
+
 function $(e) {
 	return document.getElementById(e);
 }
@@ -16,6 +18,12 @@ function avoidWalls(axis, value) {
 	} else {
 		return value;
 	}
+}
+
+function checkForMobileDevice() {
+	window.addEventListener("load", () => {
+		isMobile = navigator.userAgent.toLowerCase().match(/mobile/i);
+	});
 }
 
 function checkForMonsters(x,y) {
@@ -187,6 +195,7 @@ function relocateMonsterAtIdx(i) {
 }
 
 function waitingKeypress() {
+  if (!isMobile) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
     function onKeyHandler(e) {
@@ -199,4 +208,55 @@ function waitingKeypress() {
       }
     }
   });
+  } else {
+    return new Promise((resolve) => {
+	document.addEventListener('touchstart', handleTouchStart, false);        
+    	document.addEventListener('touchmove', handleTouchMove, false);
+
+    	var xDown = null;                                                        
+	var yDown = null;
+
+	function getTouches(evt) {
+  		return evt.touches ||             // browser API
+         	evt.originalEvent.touches; // jQuery
+	}                                                     
+                                                                         
+	function handleTouchStart(evt) {
+    		const firstTouch = getTouches(evt)[0];                                      
+    		xDown = firstTouch.clientX;                                      
+    		yDown = firstTouch.clientY;                                      
+	};                                                
+                                                                         
+	function handleTouchMove(evt) {
+    		if ( ! xDown || ! yDown ) {
+        		return;
+    	}
+
+    	var xUp = evt.touches[0].clientX;                                    
+    	var yUp = evt.touches[0].clientY;
+
+    	var xDiff = xDown - xUp;
+    	var yDiff = yDown - yUp;
+                                                                         
+    	if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+        	if ( xDiff > 0 ) {
+            		keyPressed = RIGHT; 
+        	} else {
+            		keyPressed = LEFT
+        	}                       
+    	} else {
+        	if ( yDiff > 0 ) {
+            		keyPressed = DOWN;
+        	} else { 
+            		keyPressed = UP;
+        	}                                                                 
+    	}
+    
+	/* reset values */
+    	xDown = null;
+    	yDown = null;                   
+	resolve();                          
+	};
+  }); 
+}
 }
