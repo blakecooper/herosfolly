@@ -22,7 +22,11 @@ function avoidWalls(axis, value) {
 
 function checkForMobileDevice() {
 	window.addEventListener("load", () => {
-		isMobile = navigator.userAgent.toLowerCase().match(/mobile/i);
+		console.log(navigator.userAgent);
+		let mobile = navigator.userAgent.toLowerCase().match(/mobile/i);
+		if (mobile !== null) {
+			isMobile = true;
+		}
 	});
 }
 
@@ -187,17 +191,21 @@ function relocateMonsterAtIdx(i) {
         let y = getRandomCoordinate(COLS);
 
         if (map[x][y] === FLOOR && noEntitiesOnSquare(x, y)) {
+	    Matrix[MINION][enemies[i].X][enemies[i].Y] = SPACE;
+
             enemies[i].X = x;
             enemies[i].Y = y;
+
             acceptablePlacement = true;
         }
     }
 }
 
 function waitingKeypress() {
-  if (!isMobile) {
   return new Promise((resolve) => {
     document.addEventListener('keydown', onKeyHandler);
+	document.addEventListener('touchstart', handleTouchStart);        
+   	document.addEventListener('touchmove', handleTouchMove);
     function onKeyHandler(e) {
 	for (key in KEYMAP) {
 		if (e.keyCode === parseInt(key)) {
@@ -207,14 +215,7 @@ function waitingKeypress() {
 		}
       }
     }
-  });
-  } else {
-    return new Promise((resolve) => {
-	document.addEventListener('touchstart', handleTouchStart, false);        
-    	document.addEventListener('touchmove', handleTouchMove, false);
-
-    	var xDown = null;                                                        
-	var yDown = null;
+    	var xDown = null;                                                        	var yDown = null;
 
 	function getTouches(evt) {
   		return evt.touches ||             // browser API
@@ -223,40 +224,43 @@ function waitingKeypress() {
                                                                          
 	function handleTouchStart(evt) {
     		const firstTouch = getTouches(evt)[0];                                      
-    		xDown = firstTouch.clientX;                                      
+    		xDown = firstTouch.clientX;                                     
     		yDown = firstTouch.clientY;                                      
 	};                                                
                                                                          
 	function handleTouchMove(evt) {
-    		if ( ! xDown || ! yDown ) {
+		if ( ! xDown || ! yDown ) {
         		return;
-    	}
+    		}
+    	
+		var xUp = evt.touches[0].clientX;                                   		
+		var yUp = evt.touches[0].clientY;
 
-    	var xUp = evt.touches[0].clientX;                                    
-    	var yUp = evt.touches[0].clientY;
-
-    	var xDiff = xDown - xUp;
-    	var yDiff = yDown - yUp;
+    		var xDiff = xDown - xUp;
+    		var yDiff = yDown - yUp;
                                                                          
-    	if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-        	if ( xDiff > 0 ) {
-            		keyPressed = RIGHT; 
-        	} else {
-            		keyPressed = LEFT
-        	}                       
-    	} else {
-        	if ( yDiff > 0 ) {
-            		keyPressed = DOWN;
-        	} else { 
-            		keyPressed = UP;
-        	}                                                                 
-    	}
+    		if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+        		if ( xDiff > 0 ) {
+            			keyPressed = 100; 
+        		} else {
+            			keyPressed = 102;
+        		}                       
+    		} else {
+        		if ( yDiff > 0 ) {
+            			keyPressed = 104;
+        		} else { 
+            			keyPressed = 98;
+        		}                                                                 
+    		}
     
-	/* reset values */
-    	xDown = null;
-    	yDown = null;                   
-	resolve();                          
+		/* reset values */
+    		xDown = null;
+    		yDown = null;                   
+		document.removeEventListener('touchstart', handleTouchStart);        
+   		document.removeEventListener('touchmove', handleTouchMove);
+		resolve();                          
+
 	};
-  }); 
-}
+  });
+
 }

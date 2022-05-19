@@ -151,7 +151,6 @@ function enemyMoves(idx) {
 		}
 	}
 }
-
 async function game() {
 
     getHighScores();

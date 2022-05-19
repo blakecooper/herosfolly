@@ -2,15 +2,11 @@ let screenWidth = -1;
 let screenHeight = -1;
 let buffer = 20;
 window.addEventListener("load", () => {
-	screenWidth = window.outerWidth;
-	screenHeight = window.outerHeight;
+	screenWidth = window.innerWidth;
+	screenHeight = window.innerHeight;
 
 	sizeElementsToWindow();
 });
-
-//window.addEventListener('resize', function(event) {
-//    sizeElementsToWindow();
-//});
 
 let bodyBackground = 'black';
 
@@ -131,7 +127,6 @@ function sizeElementsToWindow() {
 let screen = $("body");
 let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
 let fontSize = parseFloat(style);
-console.log(fontSize); 
 
 	let adjustedFontSize = DEFAULT_FONT_SIZE;
 
@@ -156,7 +151,12 @@ console.log(fontSize);
 	}
 
 	document.querySelector("body").style = "font-size: " + adjustedFontSize + "em;";
-	$("stats").style = "top: " + (adjustedFontSize * fontSize * ROWS + buffer) + "px;";
+	let statsStyleUpdate = "top: " + (adjustedFontSize * fontSize * ROWS + buffer) + "px;"
+		+ "font-size: " + adjustedFontSize*.6 + "em;";
+	$("stats").style = statsStyleUpdate;
+	let statusStyleUpdate = "top: " + (adjustedFontSize * fontSize * ROWS + buffer + 25) + "px;" 
+		+ "font-size: " + adjustedFontSize*.6 + "em;";
+	$("status").style = statusStyleUpdate;
 }
 
 function updateUIColor(element, palette) {
