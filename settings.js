@@ -1,3 +1,6 @@
+//Default font size (in em)
+const DEFAULT_FONT_SIZE = 1.9;
+
 //Minimum number of potential monsters per floor
 const BASE_ENEMIES_PER_FLOOR = 4;
 
