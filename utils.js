@@ -229,6 +229,10 @@ function waitingKeypress() {
 	};                                                
                                                                          
 	function handleTouchMove(evt) {
+		//detect quadrant
+		//determine slop of line
+		//designate x, y or x+y shift as necessary
+
 		if ( ! xDown || ! yDown ) {
         		return;
     		}
@@ -238,8 +242,64 @@ function waitingKeypress() {
 
     		var xDiff = xDown - xUp;
     		var yDiff = yDown - yUp;
-                                                                         
-    		if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
+                
+		let slope = yDiff/xDiff;
+            
+		if (xDiff > 0 && yDiff > 0) {
+			//Quadrant IV
+			if (slope < .7) {
+				keyPressed = 100;
+			} else if (slope === .7) {
+				keyPressed = 103;
+			} else if (slope > .7 && slope < 1.8) {
+				keyPressed = 103;	
+			} else if (slope === 1.8) {
+				keyPressed = 103;
+			} else if (slope > 1.8) {
+				keyPressed = 104;
+			}
+		} else if (xDiff > 0 && yDiff < 0) {
+			//Quadrant III
+			if (slope > -.7) {
+				keyPressed = 100;
+			} else if (slope === -.7) {
+				keyPressed = 97;
+			} else if (slope < -.7 && slope > -1.8) {
+				keyPressed = 97;	
+			} else if (slope === -1.8) {
+				keyPressed = 97;
+			} else if (slope < -1.8) {
+				keyPressed = 98;
+			}
+		} else if (xDiff < 0 && yDiff > 0) {
+			//Quadrant I
+			if (slope > -.7) {
+				keyPressed = 102;
+			} else if (slope === -.7) {
+				keyPressed = 105;
+			} else if (slope < -.7 && slope > -1.8) {
+				keyPressed = 105;	
+			} else if (slope === -1.8) {
+				keyPressed = 105;
+			} else if (slope < -1.8) {
+				keyPressed = 104;
+			}
+		} else if (xDiff < 0 && yDiff < 0) {
+			//Quadrant II
+			if (slope < .7) {
+				keyPressed = 102;
+			} else if (slope === .7) {
+				keyPressed = 99;
+			} else if (slope > .7 && slope < 1.8) {
+				keyPressed = 99;	
+			} else if (slope === 1.8) {
+				keyPressed = 99;
+			} else if (slope > 1.8) {
+				keyPressed = 98;
+			}
+		} else {               
+    		//This should only fire if one of the x or y values is 0
+		if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
         		if ( xDiff > 0 ) {
             			keyPressed = 100; 
         		} else {
@@ -252,6 +312,7 @@ function waitingKeypress() {
             			keyPressed = 98;
         		}                                                                 
     		}
+		}
     
 		/* reset values */
     		xDown = null;

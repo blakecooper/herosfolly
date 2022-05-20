@@ -4,8 +4,12 @@ let buffer = 20;
 window.addEventListener("load", () => {
 	screenWidth = window.innerWidth;
 	screenHeight = window.innerHeight;
-
+	
 	sizeElementsToWindow();
+});
+
+window.addEventListener("resize", () => {
+	sizeElementsToWindow();	
 });
 
 let bodyBackground = 'black';
@@ -124,40 +128,21 @@ function refreshScreen() {
 
 function sizeElementsToWindow() {
 
-let screen = $("body");
-let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
-let fontSize = parseFloat(style);
-
-	let adjustedFontSize = DEFAULT_FONT_SIZE;
-
-	if (screenHeight !== -1 && screenWidth !== -1) {
-		let adjHeight = 0;
-		let adjWidth = 0;
-
-		if (ROWS * (DEFAULT_FONT_SIZE * fontSize) > screenHeight) {
-			adjHeight = screenHeight/(ROWS * fontSize) * 1.5;
-		}
-		if (COLS * (DEFAULT_FONT_SIZE * fontSize) > screenWidth) {
-			adjWidth = screenWidth/(COLS * fontSize) * 1.5;
-		}
-
-		
-		if (adjHeight > 0 && adjWidth > 0) {
-			adjustedFontSize = adjHeight > adjWidth ? adjWidth : adjHeight;
-			console.log(adjustedFontSize);
-		} else if (adjHeight + adjWidth > 0) {
-			adjustedFontSize = adjHeight > 0 ? adjHeight : adjWidth;
-		}
-	}
-
-	document.querySelector("body").style = "font-size: " + adjustedFontSize + "em;";
-	let statsStyleUpdate = "top: " + (adjustedFontSize * fontSize * ROWS + buffer) + "px;"
-		+ "font-size: " + adjustedFontSize*.6 + "em;";
-	$("stats").style = statsStyleUpdate;
-	let statusStyleUpdate = "top: " + (adjustedFontSize * fontSize * ROWS + buffer + 25) + "px;" 
-		+ "font-size: " + adjustedFontSize*.6 + "em;";
-	$("status").style = statusStyleUpdate;
+//If screen is in portrait mode, leave room for stats and status at the bottom
+if (screenWidth > screenHeight && isMobile) {
+	$("body").style = "font-size: 3vw;";
+} else {
+	$("body").style = "font-size: 4vw;";
 }
+
+let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
+let systemFontSize = parseFloat(style);
+		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
+		$("stats").style = statsStyleUpdate;
+		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
+		$("status").style = statusStyleUpdate;
+}
+
 
 function updateUIColor(element, palette) {
     if (element === BACKGROUND) {
