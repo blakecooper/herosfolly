@@ -1,3 +1,17 @@
+let screenWidth = -1;
+let screenHeight = -1;
+let buffer = 20;
+window.addEventListener("load", () => {
+	screenWidth = window.innerWidth;
+	screenHeight = window.innerHeight;
+	
+	sizeElementsToWindow();
+});
+
+window.addEventListener("resize", () => {
+	sizeElementsToWindow();	
+});
+
 let bodyBackground = 'black';
 
 function closeSpan() {
@@ -111,6 +125,24 @@ function refreshScreen() {
     draw(SHARD);
     draw(BUFF);
 }
+
+function sizeElementsToWindow() {
+
+//If screen is in portrait mode, leave room for stats and status at the bottom
+if (screenWidth > screenHeight && isMobile) {
+	$("body").style = "font-size: 3vw;";
+} else {
+	$("body").style = "font-size: 4vw;";
+}
+
+let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
+let systemFontSize = parseFloat(style);
+		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
+		$("stats").style = statsStyleUpdate;
+		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
+		$("status").style = statusStyleUpdate;
+}
+
 
 function updateUIColor(element, palette) {
     if (element === BACKGROUND) {

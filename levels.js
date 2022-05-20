@@ -1,8 +1,8 @@
 let LEVELS = [];
 const MIN_ROOM_SIZE = 5;
 const MAX_ROOM_SIZE = 8;
-const ROWS = 16;
-const COLS = 40;
+let ROWS = 16;
+let COLS = 40;
 
 function stringToHash(string) {
                   
