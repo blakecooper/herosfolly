@@ -5,11 +5,11 @@ window.addEventListener("load", () => {
 	screenWidth = window.innerWidth;
 	screenHeight = window.innerHeight;
 	
-	sizeElementsToWindow();
+//	sizeElementsToWindow();
 });
 
 window.addEventListener("resize", () => {
-	sizeElementsToWindow();	
+//	sizeElementsToWindow();	
 });
 
 let bodyBackground = 'black';
