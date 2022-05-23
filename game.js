@@ -1,5 +1,9 @@
 let cookies = document.cookie;
 
+let typeMonsterKilledPlayer = MINION;
+let shardsLost = 0;
+let hoarderLevel = -1;
+
 let level = 0;
 let highscores = -1;
 let isNewHighScore = false;
@@ -64,7 +68,7 @@ function attack(aggressor, defender) {
             drawStatus("You missed!");
         } else if (aggressor.TYPE === MINION) {
             drawStatus("The minion missed!");
-        } else if (aggressor.TYP === MAXION) {
+        } else if (aggressor.TYPE === MAXION) {
             drawStatus("The Maxion missed!");
         }
     }
@@ -151,15 +155,69 @@ function enemyMoves(idx) {
 		}
 	}
 }
+
+function getDroppedShards() {
+	let key = "hoarderType=";
+	let type = ""
+	if (cookies.length > 0) {
+		if (cookies.search(key) !== -1) {
+			let str = cookies.substring(cookies.search(key) + key.length);
+			let idx = 0;
+			while (idx < cookies.length && str[idx]!==";") {
+				type += str[idx];
+				idx++;	
+			}
+
+			typeMonsterKilledPlayer = type;
+		}
+
+		key = "hoarderLevel=";
+		let lvl = 0;
+
+		if (cookies.search(key) !== -1) {
+			let str = cookies.substring(cookies.search(key) + key.length);
+			let idx = 0;
+			while (idx < cookies.length && str[idx]!==";") {
+				lvl += str[idx];
+				idx++;	
+			}
+
+			 hoarderLevel = parseInt(lvl);
+		}
+
+		key = "shardsLost=";
+		let shards = 0;
+
+		if (cookies.search(key) !== -1) {
+			let str = cookies.substring(cookies.search(key) + key.length);
+			let idx = 0;
+			while (idx < cookies.length && str[idx]!==";") {
+				shards += str[idx];
+				idx++;	
+			}
+
+			 shardsLost = parseInt(shards);
+		}
+		
+	}
+}
+
+function monsterStealsShards(idx) {
+	typeMonsterKilledPlayer = enemies[idx].TYPE;
+	shardsLost = enemies[idx].SHARDS;
+}
+
 async function game() {
 
     getHighScores();
+
+    getDroppedShards();
 
     checkForMobileDevice();
     
     newLevel();
     
-    setInterval(refreshScreen, (1000 / FPS));
+    setInterval(refreshScreen(player.X,player.Y), (1000 / FPS));
 
 	while (play) {
 	
@@ -171,7 +229,7 @@ async function game() {
 	}
 
     maybeUpdateHighScores();
-
+    
     if (isNewHighScore) {
         drawStatus("New high score!");
     }
@@ -255,6 +313,9 @@ function loop() {
 	
 		if ((enemies[i].X > 0 && enemies[i].Y > 0) && (Math.abs(player.X - enemies[i].X) < 2) && (Math.abs(player.Y - enemies[i].Y) < 2)) {
 			attack(enemies[i],player);
+			if(player.HP < 1) {
+				monsterStealsShards(i);
+			}
 		} else {
 			if (enemies[i].TYPE === MAXION || random(20) > 1) {
 				enemyMoves(i);

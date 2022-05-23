@@ -1,8 +1,8 @@
 let LEVELS = [];
 const MIN_ROOM_SIZE = 5;
 const MAX_ROOM_SIZE = 8;
-let ROWS = 16;
-let COLS = 40;
+let ROWS = 128;
+let COLS = 320;
 
 function stringToHash(string) {
                   
@@ -226,7 +226,11 @@ function generateRoom() {
 }
 
 function isConnected(level) {
-    let connected = initializeMatrix(ROWS, COLS, false);
+    //TODO: Optimize for larger maps
+    return true;
+}
+    /*
+let connected = initializeMatrix(ROWS, COLS, false);
 
     let isFloor = false;
 
@@ -275,3 +279,4 @@ function isConnected(level) {
 
     return true;
 }
+*/

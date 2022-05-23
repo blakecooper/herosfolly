@@ -1,10 +1,16 @@
 let screenWidth = -1;
 let screenHeight = -1;
 let buffer = 125;
+
+let rowsVisible = -1;
+let colsVisible = -1;
+
 window.addEventListener("load", () => {
 	screenWidth = window.innerWidth;
 	screenHeight = window.innerHeight;
-	
+
+    $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
+
 //	sizeElementsToWindow();
 });
 
@@ -65,13 +71,13 @@ function draw(entity) {
     $(entity).innerHTML = html;
 }
 
-function drawMap() {
+function drawMap(x,y) {
 	
 	$("level").innerHTML = "";
 	let html = "";
 
-    	for (let row = 0; row < ROWS; row++) {
-		    for (let col = 0; col < COLS; col++) {
+    	for (let row = x-5; row < x+5; row++) {
+		    for (let col = y-5; col < y+5; col++) {
 			    if (map[row][col] !== null) {
                     html += map[row][col];
                 } else {
@@ -116,8 +122,8 @@ function drawStatus(message) {
     }, 1000 * SECONDS_DISPLAY_STATUS);
 }
 
-function refreshScreen() {
-    drawMap();
+function refreshScreen(x,y) {
+    drawMap(x,y);
     drawStats();
     draw(MINION);
     draw(POTION);

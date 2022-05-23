@@ -131,7 +131,7 @@ function maybeUpdateHighScores() {
         isNewHighScore = true;
     }
     
-    document.cookie = "highscores=" + highscores + "; SameSite=Strict;";
+    document.cookie = "highscores=" + highscores + "; hoarderType=" + typeMonsterKilledPlayer + "; hoardedLevel=" + level + "; shardsLost=" + shardsLost + "; SameSite=Strict;";
     console.log("cookies updated: " + document.cookie);
 }
 
