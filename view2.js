@@ -5,13 +5,37 @@ let buffer = 125;
 let rowsVisible = -1;
 let colsVisible = -1;
 
+//For testing purposes:
+let displayedCoords = false;
+
 window.addEventListener("load", () => {
 	screenWidth = window.innerWidth;
 	screenHeight = window.innerHeight;
 
+    //TODO: more efficient way to do the following?
+    let origFont = window.getComputedStyle(document.body).getPropertyValue('font-size');
+    let idx = 0;
+
+    while(origFont[idx] !== 'p') {
+        idx++;
+    }
+
+    origFont = origFont.substring(0,idx);
+
+    rowsVisible = Math.floor(screenHeight/(origFont)*DEFAULT_FONT_SIZE);
+    //this is necessary because the font is not square (yet):
+    rowsVisible /= 3;
+    colsVisible = Math.floor(screenWidth/(origFont) * DEFAULT_FONT_SIZE);
     $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
 
-//	sizeElementsToWindow();
+    //Add maps for different potions
+    for (potion in POTION) {
+        let potionMap = document.createElement('div');
+        potionMap.id = potion["ID"];
+        potionMap.class = "map";
+        potionMap.style = "color: " + potion["COLOR"];
+        $("container").appendChild(potionMap); 
+    }
 });
 
 //window.addEventListener("resize", () => {
@@ -53,8 +77,29 @@ function draw(entity) {
 
     let html = "";
 
-    for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
+    let rowz = (player.X - Math.floor(rowsVisible/2)) > 0 ? player.X-Math.floor(rowsVisible/2) : 0;
+    let colz = (player.Y - Math.floor(colsVisible/2)) > 0 ? player.Y-Math.floor(colsVisible/2) : 0;
+
+    let endRow;
+    let endCol;
+
+    if (rowz === 0) { 
+        endRow = rowsVisible; 
+    } else {
+        endRow = (player.X + Math.ceil(rowsVisible/2)) < ROWS ? player.X+Math.ceil(rowsVisible/2) :  ROWS;
+    }
+    
+    if (colz === 0) { 
+        endCol = colsVisible; 
+    } else {
+        endCol = (player.Y + Math.ceil(colsVisible/2)) < COLS ? player.Y+Math.ceil(colsVisible/2) : COLS;
+    }
+
+    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
+    if (endCol === COLS) { colz = COLS-colsVisible; }
+    
+    for (let row = rowz; row < endRow; row++) {
+        for (let col = colz; col < endCol; col++) {
             if (Matrix[entity][row][col] === entity || Matrix[entity][row][col] === MAXION) {
                 html += "<span style='background-color: " + bodyBackground + ";'>";
             }
@@ -71,21 +116,42 @@ function draw(entity) {
     $(entity).innerHTML = html;
 }
 
-function drawMap(x,y) {
+function drawMap() {
 	
 	$("level").innerHTML = "";
 	let html = "";
 
-    	for (let row = x-5; row < x+5; row++) {
-		    for (let col = y-5; col < y+5; col++) {
-			    if (map[row][col] !== null) {
-                    html += map[row][col];
-                } else {
-                    html += SPACE;
-                }
-		    }
-		    
-            html += "<br>";
+    let rowz = (player.X - Math.floor(rowsVisible/2)) > 0 ? player.X-Math.floor(rowsVisible/2) : 0;
+    let colz = (player.Y - Math.floor(colsVisible/2)) > 0 ? player.Y-Math.floor(colsVisible/2) : 0;
+
+    let endRow;
+    let endCol;
+
+    if (rowz === 0) { 
+        endRow = rowsVisible; 
+    } else {
+        endRow = (player.X + Math.ceil(rowsVisible/2)) < ROWS ? player.X+Math.ceil(rowsVisible/2) :  ROWS;
+    }
+    
+    if (colz === 0) { 
+        endCol = colsVisible; 
+    } else {
+        endCol = (player.Y + Math.ceil(colsVisible/2)) < COLS ? player.Y+Math.ceil(colsVisible/2) : COLS;
+    }
+
+    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
+    if (endCol === COLS) { colz = COLS-colsVisible; }
+    
+    for (let row = rowz; row < endRow; row++) {
+        for (let col = colz; col < endCol; col++) {
+            if (map[row][col] !== null) {
+                html += map[row][col];
+            } else {
+                html += SPACE;
+            }
+		}    
+        
+        html += "<br>";
 	}
 
 	$("level").innerHTML = html;
@@ -122,12 +188,14 @@ function drawStatus(message) {
     }, 1000 * SECONDS_DISPLAY_STATUS);
 }
 
-function refreshScreen(x,y) {
-    drawMap(x,y);
+function refreshScreen() {
+    drawMap();
     drawStats();
-    draw(MINION);
-    draw(POTION);
-    draw(PLAYER);
+    draw(MINION.SYMBOL);
+    for (potion of POTION) {
+        draw(potion);
+    }
+    draw(PLAYER.SYMBOL);
     draw(SHARD);
     draw(BUFF);
 }

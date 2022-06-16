@@ -1,0 +1,22 @@
+"items":[
+    {
+        "id": "potion",
+        "renderable": {
+            "symbol": "!",
+            "color": ""
+        },
+        "onConsume_args": "",
+        "onConsume_body": "player.HP++;"
+        }
+    },
+    {
+        "id": "shard",
+        "renderable": {
+            "symbol": "*",
+            "color": "yellow"
+        },
+        "onConsume_args": "",
+        "onConsume_body": "player.SHARDS++;"
+        }
+    }
+]

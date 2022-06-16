@@ -1,0 +1,20 @@
+"enemies": [ 
+    {
+	    "id": "minion",
+        "hp": 10,
+	    "atk": 4,
+	    "def": 3,
+        "shards": 0,
+        "symbol": "m",
+        "color": "red"
+    },
+    {
+	    "id": "maxion",
+        "hp": 22,
+	    "atk": 6,
+	    "def": 6,
+        "shards": 0,
+        "symbol": "M",
+        "color": "red"
+    }
+]

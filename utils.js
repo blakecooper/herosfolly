@@ -124,6 +124,11 @@ function initializeMatrix(rows, cols, character) {
     return matrix;
 }
 
+function loadAll() {
+    const game = {};
+    
+    return game;
+}
 function maybeUpdateHighScores() {
 
     if (highscores < player.SHARDS) {

@@ -4,14 +4,6 @@ const DEFAULT_FONT_SIZE = 1.5;
 //Minimum number of potential monsters per floor
 const BASE_ENEMIES_PER_FLOOR = 4;
 
-const MINION_BASE_HP = 10;
-const MINION_BASE_ATK = 4; 
-const MINION_BASE_DEF = 3;
-
-const MAXION_BASE_HP = 22;
-const MAXION_BASE_ATK = 6;
-const MAXION_BASE_DEF = 6;
-
 //Number of shards per floor
 const SHARDS_PER_LEVEL = 1000;
 

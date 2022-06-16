@@ -21,7 +21,7 @@ body {
 }
 
 #level {
-    opacity: .8;
+    opacity: .5;
 }
 
 #m {
@@ -34,14 +34,6 @@ body {
 
 #\% {
     color: green;
-}
-
-#\@ {
-    color: white;
-}
-
-#\! {
-    color: blue;
 }
 
 .background {

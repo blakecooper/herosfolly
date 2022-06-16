@@ -1,4 +1,4 @@
-//Warning: changing these may cause undetermined behavior!
+//Warning: changing these may cause undefined behavior!
 const LEFT = 0;
 const RIGHT = 1;
 const DOWN = 2;
