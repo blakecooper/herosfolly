@@ -12,7 +12,6 @@ const WAIT = 8;
 const ROW = 0;
 const COL = 1;
 
-const MAP = 0;
 const SHARDS = 1;
 const MONSTERS = 2;
 const PLAYER_MAP = 3;

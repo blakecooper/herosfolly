@@ -27,17 +27,7 @@ window.addEventListener("load", () => {
     rowsVisible /= 3;
     colsVisible = Math.floor(screenWidth/(origFont) * DEFAULT_FONT_SIZE);
     $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
-
-    //Add maps for different potions
-    for (potion in POTION) {
-        let potionMap = document.createElement('div');
-        potionMap.id = potion["ID"];
-        potionMap.class = "map";
-        potionMap.style = "color: " + potion["COLOR"];
-        $("container").appendChild(potionMap); 
-    }
 });
-
 //window.addEventListener("resize", () => {
 //	sizeElementsToWindow();	
 //});
@@ -116,7 +106,7 @@ function draw(entity) {
     $(entity).innerHTML = html;
 }
 
-function drawMap() {
+function drawMap(map) {
 	
 	$("level").innerHTML = "";
 	let html = "";
@@ -188,8 +178,8 @@ function drawStatus(message) {
     }, 1000 * SECONDS_DISPLAY_STATUS);
 }
 
-function refreshScreen() {
-    drawMap();
+function refreshScreen(map) {
+    drawMap(map);
     drawStats();
     draw(MINION.SYMBOL);
     for (potion of POTION) {

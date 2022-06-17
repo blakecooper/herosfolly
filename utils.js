@@ -77,13 +77,13 @@ function getHighScores() {
     const key = "highscores=";
     let score = "";
 
-    if (cookies.length > 0 && cookies.search(key) !== -1) {
+    if (game.getCookies.length > 0 && game.getCookies.search(key) !== -1) {
 
-        let highscoresString = cookies.substring(cookies.search(key) + key.length);
+        let highscoresString = game.getCookies.substring(game.getCookies().search(key) + key.length);
 
         let idx = 0;
 
-        while (idx < cookies.length && highscoresString[idx] !== ";") {
+        while (idx < game.getCookies().length && highscoresString[idx] !== ";") {
             score += highscoresString[idx];
             idx++;
         }
@@ -137,7 +137,7 @@ function maybeUpdateHighScores() {
     }
     
     document.cookie = "highscores=" + highscores + "; hoarderType=" + typeMonsterKilledPlayer + "; hoardedLevel=" + level + "; shardsLost=" + shardsLost + "; SameSite=Strict;";
-    console.log("cookies updated: " + document.cookie);
+    console.log("game.getCookies() updated: " + document.cookie);
 }
 
 function monstersCleared() {
