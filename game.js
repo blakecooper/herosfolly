@@ -1,4 +1,169 @@
-const game = (function() {
+function testDOMAccess() {
+  console.log($("level"));
+}
+
+function $(e) {
+	return document.getElementById(e);
+}
+
+let bodyBackground = 'black';
+let rowsVisible = -1;
+let colsVisible = -1;
+
+function closeSpan() {
+    if (player.HP < player.BASE_HP) {
+        return "</span>";
+    } else {
+        return "";
+    }
+}
+
+function damageSpan() {
+
+    let html = "";
+
+    if (player.hp < player.base_hp) {
+        html = "<span class=";
+
+        if (player.hp < (player.base_hp / 3)) {
+            html += "red";
+        } else {
+            html += "yellow";
+        }
+
+        html += ">";
+
+    }
+    
+    return html;
+}
+
+function random(value) {
+	return Math.floor(Math.random() * value);
+}
+
+function refreshScreen(map, entities, x, y) {
+    console.log("Check");
+    drawMap(map, x, y);
+    drawStats();
+    draw(entities, x, y);
+}
+
+function drawEntities() {
+    draw(ITEMS.potion.renderable.symbol);
+    draw(player.renderable.symbol);
+    draw(SHARD.renderable.symbol);
+}
+
+function drawMap(map, x, y) {
+    $("level").innerHTML = "";
+	let html = "";
+
+    let rowz = (x - Math.floor(rowsVisible/2)) > 0 
+    ? x-Math.floor(rowsVisible/2) : 0;
+    
+    let colz = (y - Math.floor(colsVisible/2)) > 0
+    ? y-Math.floor(colsVisible/2) : 0;
+
+    let endRow;
+    let endCol;
+
+    if (rowz === 0) { 
+        endRow = rowsVisible; 
+    } else {
+        endRow = (x + Math.ceil(rowsVisible/2)) < ROWS 
+        ? x+Math.ceil(rowsVisible/2) :  ROWS;
+    }
+    
+    if (colz === 0) { 
+        endCol = colsVisible; 
+    } else {
+        endCol = (y + Math.ceil(colsVisible/2)) < COLS 
+        ? y+Math.ceil(colsVisible/2) : COLS;
+    }
+
+    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
+    if (endCol === COLS) { colz = COLS-colsVisible; }
+    
+    for (let row = rowz; row < endRow; row++) {
+        for (let col = colz; col < endCol; col++) {
+            if (map[row][col] !== null) {
+                html += map[row][col];
+            } else {
+                html += SPACE;
+            }
+		}    
+        
+        html += "<br>";
+	}
+
+    $("level").innerHTML = html;
+	html = "";
+}
+function draw(entityMatrix, x, y) {
+    $("entities").innerHTML = "";
+
+    let html = "";
+
+    let rowz = (x - Math.floor(rowsVisible/2)) > 0 
+    ? x-Math.floor(rowsVisible/2) : 0;
+    
+    let colz = (y - Math.floor(colsVisible/2)) > 0 
+    ? y-Math.floor(colsVisible/2) : 0;
+
+    let endRow;
+    let endCol;
+
+    if (rowz === 0) { 
+        endRow = rowsVisible; 
+    } else {
+        endRow = (x + Math.ceil(rowsVisible/2)) < ROWS 
+        ? x+Math.ceil(rowsVisible/2) :  ROWS;
+    }
+    
+    if (colz === 0) { 
+        endCol = colsVisible; 
+    } else {
+        endCol = (y + Math.ceil(colsVisible/2)) < COLS 
+        ? y+Math.ceil(colsVisible/2) : COLS;
+    }
+
+    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
+    if (endCol === COLS) { colz = COLS-colsVisible; }
+    
+    for (let row = rowz; row < endRow; row++) {
+        for (let col = colz; col < endCol; col++) {
+            if (entityMatrix[row][col].renderable !== undefined) {
+                html += "<span style='background-color: " + bodyBackground 
+                + "; color: " + entityMatrix[row][col].renderable.color + "'>";
+                html += entityMatrix[row][col].renderable.symbol;
+                html += "</span>";
+            } else {
+                html += SPACE;
+            }
+        }
+        html += "<br>";
+    }
+
+    $("entities").innerHTML = html;
+}
+
+function drawStats() {
+
+    $("stats").innerHTML = "hp: " 
+        + damageSpan()
+		+ player.hp
+        + closeSpan()
+        + "/" + player.base_hp
+        + " atk: "
+		+ player.atk
+        + " def: "
+		+ player.def
+        + " shards: "
+		+ player.shards
+        + " top: "
+        + highscores;
+}
 
   //move this to utils
   if (typeof Object.beget !== 'function') {
@@ -18,7 +183,7 @@ const game = (function() {
 
   const enemies = (function() {
     const retArr = [];
-
+      
     for (let i = 0; i < ENEMIES.length; i++) {
       const numberEnemies =
       Math.floor(SPAWN.enemy.number * ENEMIES[i].spawnRate);
@@ -35,22 +200,39 @@ const game = (function() {
   })();
   
   //this is to initialize... how to refresh? Track monster locations before moves/attacks, then check every monster that moved and update? Or just flash it every time?
-  const entityMatrix = (() => {
-    const matrix = initializeMatrix(map.length,map[0].length,"&nbsp");
+  const entityMatrix = initializeMatrix(map.length,map[0].length,SPACE);
 
-    matrix[player.x][player.y] = player.renderable.symbol;
+    entityMatrix[player.x][player.y] = player.renderable.symbol;
 
     for (let i = 0; i < enemies.length; i++) {
-      matrix[enemies[i].x][enemies[i].y] = enemies[i].renderable.symbol;
+      entityMatrix[enemies[i].x][enemies[i].y] = enemies[i];
     }    
  
     for (let i = 0; i < SPAWN.shards.number; i++) {
       const coords = getAcceptableCoordinate();
 
-      matrix[coords[0]][coords[1]] = SHARD.renderable.symbol;
+      entityMatrix[coords[0]][coords[1]] = SHARD;
     }
-  });
-  
+
+    for (let i = 0; i < SPAWN.potions.number; i++) {
+      const coords = getAcceptableCoordinate();
+
+      entityMatrix[coords[0]][coords[1]] = ITEMS.potion;
+    }
+
+
+  function getEntityMatrix() { return entityMatrix; }
+    
+    //Get rid of any monsters right next to player
+    for (let row = (player.x - 1); row < (player.x + 2); row++) {
+      for (let col = (player.y - 1); col < (player.y + 2); col++) {
+        if (entityMatrix[row][col].id === "minion" || entityMatrix[row][col].id === "maxion") {
+          
+          relocateMonsterAtIdx(getEnemyAt(row, col));
+        }
+      }
+    }
+
   function getAcceptableCoordinate() {
     let acceptable = false;
     let coordsArr = [-1, -1];
@@ -83,32 +265,32 @@ const game = (function() {
   function attack(aggressor, defender) {
     let atkBonus = 0;
   
-    if (aggressor.TYPE === MINION || aggressor.TYPE === MAXION) {
+    if (aggressor.id === "minion" || aggressor.id === "maxion") {
       atkBonus = Math.ceil(level/4);
     } else {
-      atkBonus = Math.ceil(aggressor.ATK/5);
+      atkBonus = Math.ceil(aggressor.atk/5);
     }
     
-    let defenderHit = (random(20) + atkBonus) > defender.DEF;
+    let defenderHit = (random(20) + atkBonus) > defender.def;
   
     if (defenderHit) {
-      let dmgToDefender = Math.floor(aggressor.ATK/2) + random(Math.ceil(aggressor.ATK/2));
-      defender.HP -= dmgToDefender;
-      if (defender.HP < 1) {
-        let type = defender.TYPE;
+      let dmgToDefender = Math.floor(aggressor.atk/2) + random(Math.ceil(aggressor.atk/2));
+      defender.hp -= dmgToDefender;
+      if (defender.hp < 1) {
+        let type = defender.id;
   
         if (type === "M") {
           type = "m";
         }
-        Matrix[type][defender.X][defender.Y] = SPACE;
-        defender.X = -1;
-        defender.Y = -1;
+        entityMatrix[defender.x][defender.y] = SPACE;
+        defender.x = -1;
+        defender.y = -1;
   
-        if (random(2) < 1 && aggressor.HP < aggressor.BASE_HP) {
-          aggressor.HP++;
+        if (random(2) < 1 && aggressor.hp < aggressor.base_hp) {
+          aggressor.hp++;
         }
   
-        for (let i = 0; i < defender.SHARDS; i++) {
+        for (let i = 0; i < defender.shards; i++) {
           pickupShard(aggressor);     
         }
   
@@ -117,9 +299,9 @@ const game = (function() {
     } else {
       if (aggressor === player) {
         drawStatus("You missed!");
-      } else if (aggressor.TYPE === MINION) {
+      } else if (aggressor.id === "minion") {
         drawStatus("The minion missed!");
-      } else if (aggressor.TYPE === MAXION) {
+      } else if (aggressor.TYPE === "maxion") {
         drawStatus("The Maxion missed!");
       }
     }
@@ -127,166 +309,56 @@ const game = (function() {
     return true;
   }
   
-  function buildLevel() {
-    spawnExit();
-  
-  
-  
-    //Get rid of any monsters right next to player
-    for (let row = (player.X - 1); row < (player.X + 2); row++) {
-      for (let col = (player.Y - 1); col < (player.Y + 2); col++) {
-        if (Matrix[MINION][row][col] === MINION || Matrix[MINION][row][col] === MAXION) {
-          
-          relocateMonsterAtIdx(getEnemyAt(row, col));
-        }
-      }
-    }
-  
-  
-    if (random(10) < 1) {
-      spawnBuffs();
-    } 
-  	
-  }
-  
-  function clearShards() {
-    player.SHARDS += shardsOnLevel;
-    shardsOnLevel = 0;
-    Matrix[SHARD] = initializeMatrix(ROWS, COLS, SPACE);
-    player.ATK++;
-    drawStatus("Level cleared! ATK up!");
 
   function getMap() {
     return map;
   }
 
-  }
-  
   function enemyMoves(idx) {
   
   	let randomMovementChoice = random(2);
   	
-  	if ((player.X < enemies[idx].X) && (player.Y < enemies[idx].Y)) {
+  	if ((player.x < enemies[idx].X) && (player.y < enemies[idx].y)) {
   		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].X - 1),(enemies[idx].Y));
+  			moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
   		} else {
-  			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y - 1));
+  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
   		}
-  	} else if ((player.X < enemies[idx].X) && (player.Y === enemies[idx].Y)) {
-  		moveEnemyTo(idx, (enemies[idx].X - 1), enemies[idx].Y);
-  	} else if ((player.X < enemies[idx].X) && (player.Y > enemies[idx].Y)) {
+  	} else if ((player.x < enemies[idx].x) && (player.y === enemies[idx].y)) {
+  		moveEnemyTo(idx, (enemies[idx].x - 1), enemies[idx].y);
+  	} else if ((player.x < enemies[idx].x) && (player.y > enemies[idx].y)) {
   		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].X - 1),(enemies[idx].Y));
+  			moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
   		} else {
-  			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y + 1));
+  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
   		}
-  	} else if ((player.X === enemies[idx].X) && (player.Y < enemies[idx].Y)) {
-  		moveEnemyTo(idx, enemies[idx].X, (enemies[idx].Y - 1));
-  	} else if ((player.X === enemies[idx].X) && (player.Y > enemies[idx].Y)) {
-  		moveEnemyTo(idx, enemies[idx].X, (enemies[idx].Y + 1));
-  	} else if ((player.X > enemies[idx].X) && (player.Y < enemies[idx].Y)) {
+  	} else if ((player.x === enemies[idx].x) && (player.y < enemies[idx].y)) {
+  		moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y - 1));
+  	} else if ((player.x === enemies[idx].x) && (player.y > enemies[idx].y)) {
+  		moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y + 1));
+  	} else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
   		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].X + 1),(enemies[idx].Y));
+  			moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
   		} else {
-  			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y - 1));
+  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
   		}
-  	} else if ((player.X > enemies[idx].X) && (player.Y === enemies[idx].Y)) {
-  		moveEnemyTo(idx, (enemies[idx].X + 1), enemies[idx].Y);
-  	} else if ((player.X > enemies[idx].X) && (player.Y > enemies[idx].Y)) {
+  	} else if ((player.x > enemies[idx].x) && (player.y === enemies[idx].y)) {
+  		moveEnemyTo(idx, (enemies[idx].x + 1), enemies[idx].y);
+  	} else if ((player.x > enemies[idx].x) && (player.y > enemies[idx].y)) {
   		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].X + 1),(enemies[idx].Y));
+  			moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
   		} else {
-  			moveEnemyTo(idx, (enemies[idx].X),(enemies[idx].Y + 1));
+  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
   		}
   	}
-  }
-  
-  function getDroppedShards() {
-  	let key = "hoarderType=";
-  	let type = ""
-  	if (cookies.length > 0) {
-  		if (cookies.search(key) !== -1) {
-  			let str = cookies.substring(cookies.search(key) + key.length);
-  			let idx = 0;
-  			while (idx < cookies.length && str[idx]!==";") {
-  				type += str[idx];
-  				idx++;	
-  			}
-  
-  			typeMonsterKilledPlayer = type;
-  		}
-  
-  		key = "hoarderLevel=";
-  		let lvl = 0;
-  
-  		if (cookies.search(key) !== -1) {
-  			let str = cookies.substring(cookies.search(key) + key.length);
-  			let idx = 0;
-  			while (idx < cookies.length && str[idx]!==";") {
-  				lvl += str[idx];
-  				idx++;	
-  			}
-  
-  			 hoarderLevel = parseInt(lvl);
-  		}
-  
-  		key = "shardsLost=";
-  		let shards = 0;
-  
-  		if (cookies.search(key) !== -1) {
-  			let str = cookies.substring(cookies.search(key) + key.length);
-  			let idx = 0;
-  			while (idx < cookies.length && str[idx]!==";") {
-  				shards += str[idx];
-  				idx++;	
-  			}
-  
-  			 shardsLost = parseInt(shards);
-  		}
-  		
-  	}
-  }
-  
-  function Minion (shards, x, y) {
-      this.TYPE = MINION.TYPE; 
-  		this.BASE_HP = MINION.HP;
-  		this.HP = MINION.HP;
-      this.ATK = MINION.ATK;
-  		this.DEF = MINION.DEF;
-      this.SHARDS = shards;
-      this.X = x;
-      this.Y = y;
-      this.RESIDUAL_DAMAGE_PENDING = false;
-  }
-  
-  function Maxion (shards, x, y) {
-      this.TYPE = MAXION.TYPE; 
-  		this.BASE_HP = MAXION.HP;
-  		this.HP = MAXION.HP;
-  		this.ATK = MAXION.ATK;
-  		this.DEF = MAXION.DEF;
-      this.SHARDS = shards;
-      this.X = x;
-      this.Y = y;
-      this.RESIDUAL_DAMAGE_PENDING = false;
-  }
-  
-  function monsterStealsShards(idx) {
-  	typeMonsterKilledPlayer = enemies[idx].TYPE;
-  	shardsLost = enemies[idx].SHARDS;
   }
   
   async function start() {
-  	
     getHighScores();
-  
-    getDroppedShards();
-  
-    checkForMobileDevice();
-    
-    newLevel();
-    
-    setInterval(refreshScreen(map), (1000 / FPS));
+   
+//    checkForMobileDevice();
+     
+    setInterval(refreshScreen(map, entityMatrix, player.x, player.y), (1000 / FPS));
   
   	while (play) {
   	
@@ -308,15 +380,16 @@ const game = (function() {
   
   function loop() {
   
-    if (player.SHARDS !== 0 &&
-      (player.SHARDS + steps) % 777 === 0) {
+    console.log("Player's coords: " + player.x + ", " + player.y);
+    if (player.shards !== 0 &&
+      player.shards % 7 == 0) {
       randomRegen();
     }
   
   	//Get coordinates of proposed player move
-  	let proposedPlayerX = player.X;
-  	let proposedPlayerY = player.Y
-  
+  	let proposedPlayerX = player.x;
+  	let proposedPlayerY = player.y;
+    
   	if (KEYMAP[keyPressed] === LEFT) {
   		proposedPlayerY--;
   	} else if (KEYMAP[keyPressed] === RIGHT) {
@@ -339,7 +412,6 @@ const game = (function() {
   		proposedPlayerY--;
   	}
   
-    steps++;
   
     //These conditions need to prevent the player from moving (and also updating the player x and y coordinates incorrectly)
   	let monsterPresent = false;
@@ -348,14 +420,11 @@ const game = (function() {
   	//Complete player's move based on what's in the proposed move square
   	if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
   		monsterPresent = attack(player, enemies[getEnemyAt(proposedPlayerX,proposedPlayerY)]);
-      if (shardsOnLevel > 0 && monstersCleared()) {
-        clearShards();
-      }
     }
   
   	if (!monsterPresent && checkForShards(proposedPlayerX,proposedPlayerY)) {
   		pickupShard(player);	
-  		Matrix[SHARD][proposedPlayerX][proposedPlayerY] = SPACE;
+  		entityMatrix[proposedPlayerX][proposedPlayerY] = SPACE;
   	}
   
   	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
@@ -368,202 +437,48 @@ const game = (function() {
       Matrix[BUFF][proposedPlayerX][proposedPlayerY] = SPACE;
     }
   
-  	if (!monsterPresent && map[proposedPlayerX][proposedPlayerY] === EXIT) {
-  		newLevel();	
-      moveDownStairs = true;
-    }
-  	
-  	if (!monsterPresent && !moveDownStairs && map[proposedPlayerX][proposedPlayerY] !== WALL) {
+  	if (!monsterPresent && !moveDownStairs && map[proposedPlayerX][proposedPlayerY] !== MAP.text.wall) {
   		movePlayerTo(proposedPlayerX,proposedPlayerY);
   	}
   
   	//Check for enemies next to player; those enemies attack, others move toward player
   	for (let i = 0; i < enemies.length; i++) {
   	
-  		if ((enemies[i].X > 0 && enemies[i].Y > 0) && (Math.abs(player.X - enemies[i].X) < 2) && (Math.abs(player.Y - enemies[i].Y) < 2)) {
+  		if ((enemies[i].x > 0 && enemies[i].y > 0) && (Math.abs(player.x - enemies[i].x) < 2) && Math.abs(player.y - enemies[i].y < 2)) {
   			attack(enemies[i],player);
-  			if(player.HP < 1) {
-  				monsterStealsShards(i);
-  			}
   		} else {
-  			if (enemies[i].TYPE === MAXION || random(20) > 1) {
+  			if (enemies[i].id === "maxion" || random(20) > 1) {
   				enemyMoves(i);
   			}	
   		}	
   	}
   	
   	//Check to see if player has died during the loop
-  	if (player.HP < 1) {
-  		player.HP = 0;
+  	if (player.hp < 1) {
+  		player.hp = 0;
   		play = false;
   		drawStatus("You died.");
   	}
-  
-  }
-  
-  function newLevel() {
-    buildLevel();
-  	
-    if (player.DETERIORATING) {
-      playerDeteriorates();
-    }
-  
-    if (player.LEECHING) {
-      playerLeeches();
-    }
+    //TODO: start here! why are we not auto-refreshing with setInterval?? 
+      refreshScreen(map, entityMatrix,player.x,player.y);
   }
   
   function pickupBuff() {
-    playerBuffed();
-    player.DETERIORATING = true;
   }
   
   function pickupPotion() {
-    playerCured();
-    player.LEECHING = true;
   }
   
   function pickupShard(entity) {
-  	entity.SHARDS++;
-    shardsOnLevel--;
-  
-    if (shardsOnLevel === 0) {
-      entity.ATK++;
-      if (entity === player) {
-        drawStatus("Level cleared! ATK up!");
-      }
-    }
-  
+  	entity.shards++;  
   }
-  
-  function Player(shards, x, y) {
-    this.TYPE = PLAYER.TYPE;
-    this.BASE_HP = PLAYER.HP;
-    this.HP = PLAYER.HP;
-    this.ATK = PLAYER.ATK;
-    this.DEF = PLAYER.DEF;
-    this.SHARDS = shards;
-    this.X = x;
-    this.Y = y;
-    this.DETERIORATING = PLAYER.DETERIORATING;
-    this.DETERIORATION = PLAYER.DETERIORATION;
-    this.LEECHING = PLAYER.LEECHING;
-    this.LEECH = PLAYER.LEECH;
-  }
-  
-  function playerDeteriorates() {
-    if (player.DETERIORATION < PALETTES.deteriorate.length) {
-      player.DETERIORATION++;
-      updateUIColor(BACKGROUND, PALETTES.deteriorate);
-    } else {
-      player.BASE_HP--;
-      if (player.HP > player.BASE_HP) {
-        player.HP = player.BASE_HP;
-      }
-      player.ATK--;
-      player.DEF--;
-      drawStatus("You are deteriorating! Losing HP, ATK and DEF.");
-    }
-  }
-  
-  function playerLeeches() {
-    if (player.LEECH < PALETTES.leeching.length) {
-      player.LEECH++;
-      updateUIColor(TEXT, PALETTES.leeching);
-    } else {
-      if (random(2) > 0) {
-        player.HP = player.HP - 5;
-        drawStatus("Your lifeforce is leeching away! Lost 5 HP!");
-      }
-    }
-  }
-  
-  function playerBuffed() {
-  	player.BASE_HP += Math.ceil(level/ITEMS.potion.renderable.symbolS_EVERY);
-    player.BASE_DEF += Math.ceil(level/ITEMS.potion.renderable.symbolS_EVERY);
-    player.DEF = player.BASE_DEF;
-    player.DETERIORATION = 0;
-    if (!player.DETERIORATING) {
-      player.DETERIORATING = true;
-    }
-  
-    drawStatus("Player buffed! Max HP and DEF up!");
-    updateUIColor(BACKGROUND, PALETTES.deteriorate);
-  }
-  
-  function playerCured() {
-  	if (player.HP < player.BASE_HP) {
-  		player.HP = player.BASE_HP;
-    }
-  
-    player.LEECH = 0;
-    updateUIColor(TEXT, PALETTES["leeching"]);
-    drawStatus("You feel better! HP restored!");
-  }
-  
+   
   function randomRegen() {
-    if (player.HP < player.BASE_HP) {
-      player.HP++;
+    if (player.hp < player.base_hp) {
+      player.hp++;
       drawStatus("You feel a benevolent presence! 1 HP gained.");
     }
   }
-  
-  function spawnBuffs() {
-    //TODO: actual spawner
-    for (let i =0; i < 50; i++) {
-    let acceptablePlacement = false;
-  
-    while (!acceptablePlacement) {
-  		let x = getRandomCoordinate(ROWS);
-  		let y = getRandomCoordinate(COLS);
-  
-      if (map[x][y] !== null && map[x][y] === MAP.text.floor) {
-        Matrix[BUFF][x][y] = BUFF;
-        acceptablePlacement = true;
-      }
-    }
-  
-    }
-  }
-  
-  function spawnExit() {
-  	let acceptableExit = false;
-  	while (!acceptableExit) {
-  		let x = getRandomCoordinate(ROWS);
-  		let y = getRandomCoordinate(COLS);		
-  
-      //Exit shouldn't be within 1 of map edge
-      if (x < 2) {
-        x = 2;
-      }
-  
-      if (y < 2) {
-        y = 2;
-      }
-  
-  		if (map[x][y] !== null && map[x][y] === MAP.text.floor && noEntitiesOnSquare(x,y)) {
-        
-         
-        let numberFloorsNearby = 0;
-  
-        for (let row = (x-1); row < (x+2); row++) {
-          for (let col = (y-1); col < (y+2); col++) {
-            if ((row !== x || col !== y) && map[row][col] === MAP.text.floor) {
-              numberFloorsNearby++;
-            }
-          }
-        }
-  
-        if (numberFloorsNearby > 5) {
-          map[x][y] = MAP.text.floor;		
-  			  acceptableExit = true;
-        }
-        
-  		}
-  	}
-  }
-  
-  
 
   //The following variables and functions are from utils.js... move them back?
 
@@ -576,7 +491,7 @@ function $(e) {
 function avoidWalls(axis, value) {
 	let mapDimension = ROWS - 1;
 
-	if (axis == COL) {
+	if (axis === COLS) {
 		mapDimension = COLS - 1;
 	}
 	
@@ -591,7 +506,6 @@ function avoidWalls(axis, value) {
 
 function checkForMobileDevice() {
 	window.addEventListener("load", () => {
-		console.log(navigator.userAgent);
 		let mobile = navigator.userAgent.toLowerCase().match(/mobile/i);
 		if (mobile !== null) {
 			isMobile = true;
@@ -600,8 +514,8 @@ function checkForMobileDevice() {
 }
 
 function checkForMonsters(x,y) {
-	if (Matrix[MINION][x][y] === MINION || 
-		Matrix[MINION][x][y] === MAXION) {
+	if (entityMatrix[x][y] === ENEMIES[0].renderable.symbol  || 
+		entityMatrix[x][y] === ENEMIES[1].renderable.symbol) {
 		return true;
 	}
 
@@ -616,16 +530,17 @@ function checkForPotions(x,y) {
 	return false;
 }
 
+//TODO: redo buffs
 function checkForBuffs(x,y) {
-    if (Matrix[BUFF][x][y] === BUFF) {
-        return true;
-    }
+//    if (Matrix[BUFF][x][y] === BUFF) {
+//        return true;
+//    }
 
     return false;
 }
 
 function checkForShards(x,y) {
-	if (Matrix[SHARD][x][y] === SHARD) {
+	if (entityMatrix[x][y] === SHARD.renderable.symbol) {
 		return true;
 	}
 
@@ -634,7 +549,7 @@ function checkForShards(x,y) {
 
 function getEnemyAt(x,y) {
 	for (let i = 0; i < enemies.length; i++) {
-		if (enemies[i].X === x && enemies[i].Y === y) {
+		if (enemies[i].x === x && enemies[i].y === y) {
 			return i;
 		}
     }
@@ -679,20 +594,6 @@ function initializeAllMatrices() {
     }
 }
 
-function initializeMatrix(rows, cols, character) {
-    let matrix = [];
-
-    for (let row = 0; row < rows; row++) {
-        matrix.push([]);
-        
-        for (let col = 0; col < cols; col++) {
-            matrix[row].push(character);
-        }
-    }
-
-    return matrix;
-}
-
 function loadAll() {
     const game = {};
     
@@ -700,8 +601,8 @@ function loadAll() {
 }
 function maybeUpdateHighScores() {
 
-    if (highscores < player.SHARDS) {
-        highscores = player.SHARDS;
+    if (highscores < player.shards) {
+        highscores = player.shards;
         isNewHighScore = true;
     }
     
@@ -720,27 +621,23 @@ function monstersCleared() {
 }
 
 function movePlayerTo(x,y) {
-	Matrix[PLAYER][player.X][player.Y] = SPACE;
-	Matrix[PLAYER][x][y] = PLAYER;
-	player.X = x;
-	player.Y = y;
+	entityMatrix[player.x][player.y] = SPACE;
+	entityMatrix[x][y] = player.renderable.symbol;
+	player.x = x;
+	player.y = y;
 }
 
 function moveEnemyTo(idx,x,y) {
-	if (enemies[idx].X > 0 && enemies[idx].Y > 0 && map[x][y] === FLOOR && Matrix[MINION][x][y] === SPACE) {
-		Matrix[MINION][enemies[idx].X][enemies[idx].Y] = SPACE;
+	if (enemies[idx].x > 0 && enemies[idx].y > 0 && map[x][y] === MAP.text.floor && entityMatrix[x][y] === SPACE) {
+		entityMatrix[enemies[idx].x][enemies[idx].y] = SPACE;
 		if (checkForShards(x,y)) {
-			enemies[idx].SHARDS++;
-			Matrix[SHARD][x][y] = SPACE;
+			enemies[idx].shards++;
 		}
 
-		if (enemies[idx].TYPE == MINION) {
-			Matrix[MINION][x][y] = MINION;
-		} else if (enemies[idx].TYPE == MAXION) {
-			Matrix[MINION][x][y] = MAXION;
-		}
-		enemies[idx].X = x;
-		enemies[idx].Y = y;
+        entityMatrix[x][y] = enemies[idx].renderable.symbol;
+		
+        enemies[idx].x = x;
+		enemies[idx].y = y;
 	}
 } 
 
@@ -762,11 +659,11 @@ function relocateMonsterAtIdx(i) {
         let x = getRandomCoordinate(ROWS);
         let y = getRandomCoordinate(COLS);
 
-        if (map[x][y] === FLOOR && noEntitiesOnSquare(x, y)) {
-	    Matrix[MINION][enemies[i].X][enemies[i].Y] = SPACE;
+        if (map[x][y] === MAP.text.floor && noEntitiesOnSquare(x, y)) {
+	    entityMatrix[enemies[i].x][enemies[i].y] = SPACE;
 
-            enemies[i].X = x;
-            enemies[i].Y = y;
+            enemies[i].x = x;
+            enemies[i].y = y;
 
             acceptablePlacement = true;
         }
@@ -897,5 +794,86 @@ function waitingKeypress() {
   });
 
 }
-  start(); 
-})();
+let screenWidth = -1;
+let screenHeight = -1;
+let buffer = 125;
+
+
+//For testing purposes:
+let displayedCoords = false;
+
+window.addEventListener("load", () => {
+
+    screenWidth = window.innerWidth;
+	screenHeight = window.innerHeight;
+
+    //TODO: more efficient way to do the following?
+    let origFont = window.getComputedStyle(document.body).getPropertyValue('font-size');
+    let idx = 0;
+
+    while(origFont[idx] !== 'p') {
+        idx++;
+    }
+
+    origFont = origFont.substring(0,idx);
+
+    rowsVisible = Math.floor(screenHeight/(origFont)*DEFAULT_FONT_SIZE);
+    //this is necessary because the font is not square (yet):
+    rowsVisible /= 3;
+    colsVisible = Math.floor(screenWidth/(origFont) * DEFAULT_FONT_SIZE);
+    $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
+
+    start();
+});
+//window.addEventListener("resize", () => {
+//	sizeElementsToWindow();	
+//});
+
+
+
+
+
+function clearStatus() {
+    $("status").innerHTML = "";
+}
+
+function drawStatus(message) {
+    $("status").innerHTML = message;
+    let timeout = setTimeout(function() {
+        clearStatus();
+    }, 1000 * SECONDS_DISPLAY_STATUS);
+}
+
+function sizeElementsToWindow() {
+
+//If screen is in portrait mode, leave room for stats and status at the bottom
+if (screenWidth > screenHeight) {
+	$("body").style = "font-size: 2.2vw;";
+} else {
+	$("body").style = "font-size: 4vw;";
+}
+
+let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
+let systemFontSize = parseFloat(style);
+		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
+		$("stats").style = statsStyleUpdate;
+		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
+		$("status").style = statusStyleUpdate;
+}
+
+
+function updateUIColor(element, palette) {
+    if (element === BACKGROUND) {
+        if (player.DETERIORATION < palette.length) {
+            bodyBackground = palette[player.DETERIORATION]; 
+            document.querySelector("body").style.background = bodyBackground;
+        }
+    } else if (element === TEXT) {
+        if (player.LEECH < palette.length) {
+            textColor = palette[player.LEECH];
+            $("level").style.color = textColor;
+            $("stats").style.color = textColor;
+            $("status").style.color = textColor;
+        }
+    }
+}

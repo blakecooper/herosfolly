@@ -1,3 +1,17 @@
+
+function initializeMatrix(rows, cols, character) {
+    let matrix = [];
+
+    for (let row = 0; row < rows; row++) {
+        matrix.push([]);
+        
+        for (let col = 0; col < cols; col++) {
+            matrix[row].push(character);
+        }
+    }
+
+    return matrix;
+}
 let LEVELS = [];
 const MIN_ROOM_SIZE = 5;
 const MAX_ROOM_SIZE = 8;
@@ -124,7 +138,7 @@ function generateLevel(string = "default") {
 
 
     let roomStats = [];
- 
+
     let roomRows = Math.floor(ROWS/MAX_ROOM_SIZE);
     let roomCols = Math.floor(COLS/MAX_ROOM_SIZE);
    
@@ -137,7 +151,7 @@ function generateLevel(string = "default") {
             let colOffset = null;
 
             //Random chance of room not appearing
-            if (random(10) > 1){
+        //    if (random(10)) > 1){
                 room = generateRoom();
 
                 rowOffset = random(MAX_ROOM_SIZE - room.length);
@@ -146,8 +160,8 @@ function generateLevel(string = "default") {
                 let data = [room.length, room[0].length, rowOffset, colOffset];
 
                 roomStats[(roomRow * roomCols) + roomCol] = data;
-                
-            }
+                console.log("Room generated: " + data); 
+         //   } else { console.log("Room not generated"); }
 
             if (room !== null) {
                 for (let row = 0; row < room.length; row++) {
@@ -172,6 +186,9 @@ function generateLevel(string = "default") {
 
     if (noRooms) {
         let room = generateRoom();
+
+        let roomRow = 0;
+        let roomCol = 0;
                 
         rowOffset = random(MAX_ROOM_SIZE - room.length);
         colOffset = random(MAX_ROOM_SIZE - room[0].length);

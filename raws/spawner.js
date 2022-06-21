@@ -9,5 +9,9 @@ const SPAWN = {
   "shards": {
     "entity": "raws/shards.json",
     "number": 1000
+  },
+  "potions": {
+    "entity": "raws/items.js",
+    "number": 1000
   }
 };
