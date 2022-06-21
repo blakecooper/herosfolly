@@ -1,179 +1,3 @@
-function testDOMAccess() {
-  console.log($("level"));
-}
-
-function $(e) {
-	return document.getElementById(e);
-}
-
-let bodyBackground = 'black';
-let rowsVisible = -1;
-let colsVisible = -1;
-
-function closeSpan() {
-    if (player.HP < player.BASE_HP) {
-        return "</span>";
-    } else {
-        return "";
-    }
-}
-
-function damageSpan() {
-
-    let html = "";
-
-    if (player.hp < player.base_hp) {
-        html = "<span class=";
-
-        if (player.hp < (player.base_hp / 3)) {
-            html += "red";
-        } else {
-            html += "yellow";
-        }
-
-        html += ">";
-
-    }
-    
-    return html;
-}
-
-function random(value) {
-	return Math.floor(Math.random() * value);
-}
-
-function refreshScreen(map, entities, x, y) {
-    console.log("Check");
-    drawMap(map, x, y);
-    drawStats();
-    draw(entities, x, y);
-}
-
-function drawEntities() {
-    draw(ITEMS.potion.renderable.symbol);
-    draw(player.renderable.symbol);
-    draw(SHARD.renderable.symbol);
-}
-
-function drawMap(map, x, y) {
-    $("level").innerHTML = "";
-	let html = "";
-
-    let rowz = (x - Math.floor(rowsVisible/2)) > 0 
-    ? x-Math.floor(rowsVisible/2) : 0;
-    
-    let colz = (y - Math.floor(colsVisible/2)) > 0
-    ? y-Math.floor(colsVisible/2) : 0;
-
-    let endRow;
-    let endCol;
-
-    if (rowz === 0) { 
-        endRow = rowsVisible; 
-    } else {
-        endRow = (x + Math.ceil(rowsVisible/2)) < ROWS 
-        ? x+Math.ceil(rowsVisible/2) :  ROWS;
-    }
-    
-    if (colz === 0) { 
-        endCol = colsVisible; 
-    } else {
-        endCol = (y + Math.ceil(colsVisible/2)) < COLS 
-        ? y+Math.ceil(colsVisible/2) : COLS;
-    }
-
-    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
-    if (endCol === COLS) { colz = COLS-colsVisible; }
-    
-    for (let row = rowz; row < endRow; row++) {
-        for (let col = colz; col < endCol; col++) {
-            if (map[row][col] !== null) {
-                html += map[row][col];
-            } else {
-                html += SPACE;
-            }
-		}    
-        
-        html += "<br>";
-	}
-
-    $("level").innerHTML = html;
-	html = "";
-}
-function draw(entityMatrix, x, y) {
-    $("entities").innerHTML = "";
-
-    let html = "";
-
-    let rowz = (x - Math.floor(rowsVisible/2)) > 0 
-    ? x-Math.floor(rowsVisible/2) : 0;
-    
-    let colz = (y - Math.floor(colsVisible/2)) > 0 
-    ? y-Math.floor(colsVisible/2) : 0;
-
-    let endRow;
-    let endCol;
-
-    if (rowz === 0) { 
-        endRow = rowsVisible; 
-    } else {
-        endRow = (x + Math.ceil(rowsVisible/2)) < ROWS 
-        ? x+Math.ceil(rowsVisible/2) :  ROWS;
-    }
-    
-    if (colz === 0) { 
-        endCol = colsVisible; 
-    } else {
-        endCol = (y + Math.ceil(colsVisible/2)) < COLS 
-        ? y+Math.ceil(colsVisible/2) : COLS;
-    }
-
-    if (endRow === ROWS) { rowz = ROWS-rowsVisible; }
-    if (endCol === COLS) { colz = COLS-colsVisible; }
-    
-    for (let row = rowz; row < endRow; row++) {
-        for (let col = colz; col < endCol; col++) {
-            if (entityMatrix[row][col].renderable !== undefined) {
-                html += "<span style='background-color: " + bodyBackground 
-                + "; color: " + entityMatrix[row][col].renderable.color + "'>";
-                html += entityMatrix[row][col].renderable.symbol;
-                html += "</span>";
-            } else {
-                html += SPACE;
-            }
-        }
-        html += "<br>";
-    }
-
-    $("entities").innerHTML = html;
-}
-
-function drawStats() {
-
-    $("stats").innerHTML = "hp: " 
-        + damageSpan()
-		+ player.hp
-        + closeSpan()
-        + "/" + player.base_hp
-        + " atk: "
-		+ player.atk
-        + " def: "
-		+ player.def
-        + " shards: "
-		+ player.shards
-        + " top: "
-        + highscores;
-}
-
-  //move this to utils
-  if (typeof Object.beget !== 'function') {
-    Object.beget = function (o) {
-      let F = function () {};
-      F.prototype = o;
-      return new F();
-    };
-  }
-
   const map = generateLevel();
   
   //Locate player on map
@@ -298,11 +122,11 @@ function drawStats() {
       }
     } else {
       if (aggressor === player) {
-        drawStatus("You missed!");
+        VIEW.drawStatus("You missed!");
       } else if (aggressor.id === "minion") {
-        drawStatus("The minion missed!");
+        VIEW.drawStatus("The minion missed!");
       } else if (aggressor.TYPE === "maxion") {
-        drawStatus("The Maxion missed!");
+        VIEW.drawStatus("The Maxion missed!");
       }
     }
   
@@ -358,7 +182,7 @@ function drawStats() {
    
 //    checkForMobileDevice();
      
-    setInterval(refreshScreen(map, entityMatrix, player.x, player.y), (1000 / FPS));
+    setInterval(VIEW.refreshScreen(map, entityMatrix, player.x, player.y), (1000 / FPS));
   
   	while (play) {
   	
@@ -372,7 +196,7 @@ function drawStats() {
     maybeUpdateHighScores();
     
     if (isNewHighScore) {
-      drawStatus("New high score!");
+      VIEW.drawStatus("New high score!");
     }
   
     clearInterval();
@@ -457,10 +281,8 @@ function drawStats() {
   	if (player.hp < 1) {
   		player.hp = 0;
   		play = false;
-  		drawStatus("You died.");
+  		VIEW.drawStatus("You died.");
   	}
-    //TODO: start here! why are we not auto-refreshing with setInterval?? 
-      refreshScreen(map, entityMatrix,player.x,player.y);
   }
   
   function pickupBuff() {
@@ -476,17 +298,11 @@ function drawStats() {
   function randomRegen() {
     if (player.hp < player.base_hp) {
       player.hp++;
-      drawStatus("You feel a benevolent presence! 1 HP gained.");
+      VIEW.drawStatus("You feel a benevolent presence! 1 HP gained.");
     }
   }
 
   //The following variables and functions are from utils.js... move them back?
-
-let isMobile = false;
-
-function $(e) {
-	return document.getElementById(e);
-}
 
 function avoidWalls(axis, value) {
 	let mapDimension = ROWS - 1;
@@ -792,88 +608,4 @@ function waitingKeypress() {
 
 	};
   });
-
-}
-let screenWidth = -1;
-let screenHeight = -1;
-let buffer = 125;
-
-
-//For testing purposes:
-let displayedCoords = false;
-
-window.addEventListener("load", () => {
-
-    screenWidth = window.innerWidth;
-	screenHeight = window.innerHeight;
-
-    //TODO: more efficient way to do the following?
-    let origFont = window.getComputedStyle(document.body).getPropertyValue('font-size');
-    let idx = 0;
-
-    while(origFont[idx] !== 'p') {
-        idx++;
-    }
-
-    origFont = origFont.substring(0,idx);
-
-    rowsVisible = Math.floor(screenHeight/(origFont)*DEFAULT_FONT_SIZE);
-    //this is necessary because the font is not square (yet):
-    rowsVisible /= 3;
-    colsVisible = Math.floor(screenWidth/(origFont) * DEFAULT_FONT_SIZE);
-    $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
-
-    start();
-});
-//window.addEventListener("resize", () => {
-//	sizeElementsToWindow();	
-//});
-
-
-
-
-
-function clearStatus() {
-    $("status").innerHTML = "";
-}
-
-function drawStatus(message) {
-    $("status").innerHTML = message;
-    let timeout = setTimeout(function() {
-        clearStatus();
-    }, 1000 * SECONDS_DISPLAY_STATUS);
-}
-
-function sizeElementsToWindow() {
-
-//If screen is in portrait mode, leave room for stats and status at the bottom
-if (screenWidth > screenHeight) {
-	$("body").style = "font-size: 2.2vw;";
-} else {
-	$("body").style = "font-size: 4vw;";
-}
-
-let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
-let systemFontSize = parseFloat(style);
-		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
-		$("stats").style = statsStyleUpdate;
-		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
-		$("status").style = statusStyleUpdate;
-}
-
-
-function updateUIColor(element, palette) {
-    if (element === BACKGROUND) {
-        if (player.DETERIORATION < palette.length) {
-            bodyBackground = palette[player.DETERIORATION]; 
-            document.querySelector("body").style.background = bodyBackground;
-        }
-    } else if (element === TEXT) {
-        if (player.LEECH < palette.length) {
-            textColor = palette[player.LEECH];
-            $("level").style.color = textColor;
-            $("stats").style.color = textColor;
-            $("status").style.color = textColor;
-        }
-    }
 }
