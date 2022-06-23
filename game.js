@@ -1,390 +1,305 @@
-const Entity = {
-    "id": "",
-    "coords": {
-        "x": -1,
-        "y": -1,
-    },
-    "canFight": function () {
-      if (this.hp !== undefined
-      && this.atk !== undefined
-      && this.def !== undefined) {
-          return true;
-      } else {
-          return false;
-      }
-    },
-    "holdsShards": function() {
-      if (this.shards !== undefined) {
-          return true;
-      } else {
-          return false;
-      }
-    },
-    "isLucky": function () {
-      if (this.lucky !== undefined) {
-          return true;
-      } else {
-          return false;
-      }
-    },
-    "canSpawn": function () {
-      if (this.spawnRate !== undefined) {
-          return true;
-      } else {
-          return false;
-      }
-    },
-    "canBeConsumed": function () {
-      if (this.onConsume !== undefined) {
-          return true;
-      } else {
-          return false;
-      }
-    },
-    "render": {
-        "symbol": "",
-        "color": ""
-    }
-}
-
-if (typeof Object.beget !== 'function') {
-    Object.beget = function (o) {
-      let F = function () {};
-      F.prototype = o;
-      return new F();
-    };
-  }
-
 const map = generateLevel();
  
-const player = new Player(getAcceptableCoordinate());
+const player = (function() {
+  const retVal = RAW.entities.make("player");
+  const coords = getAcceptableCoordinate();
+  retVal.x = coords[0];
+  retVal.y = coords[1];
+  return retVal;
+}
 
-  const enemies = (function() {
-    const retArr = [];
-      
-    for (let i = 0; i < ENEMIES.length; i++) {
-      const numberEnemies =
-      Math.floor(SPAWN.enemy.number * ENEMIES[i].spawnRate);
+const enemies = (function() {
+  const retArr = [];
+  
+  const enemyTypes = getListOf("enemies");
+  
+  for (let i = 0; i < enemyTypes.length; i++) {
+    if (RAW.enemies[i].canSpawn()) {
+      const numberEnemies = Math.floor(RAW.settings.base_spawn_rate 
+      * RAW.enemies[i].spawnRate);
       for (let j = 0; j < numberEnemies; j++) {
-        //TODO: find a better, more generative way to do this
-        let enemy = {};
-        if (ENEMIES[i].id === "minion") {
-          enemy = new Minion(getAcceptableCoordinate());
-        } else {
-          enemy = new Maxion(getAcceptableCoordinate());
-        }
-        retArr.push(enemy); 
+        const enemy = RAW.entities.make(enemyTypes[i]);
+        const coords = getAcceptableCoordinate();
+        enemy.x = coords[0];
+        enemy.y = coords[1];
+        retArr.push(enemy);
       }
     }
-
-    return retArr; 
-  })();
+  }
+  return retArr; 
+})();
   
-  //this is to initialize... how to refresh? Track monster locations before moves/attacks, then check every monster that moved and update? Or just flash it every time?
-  const entityMatrix = initializeMatrix(map.length,map[0].length,SPACE);
+const entityMatrix = (function() {
+  const retMatrix = initializeMatrix(map.length,map[0].length,null);
 
+  const numberShards = RAW.settings.base_spawn_rate 
+  * RAW.entities.shards.spawnRate;
+  
+  for (let i = 0; i < numberShards; i++) {
+    const coords = getAcceptableCoordinate();
+    const shard = RAW.entities.make("shard");
+    shard.x = coords[0];
+    shard.y = coords[1];
 
-    for (let i = 0; i < enemies.length; i++) {
-      entityMatrix[enemies[i].x][enemies[i].y] = enemies[i];
-    }    
+    retMatrix[coords[0]][coords[1]] = shard;
+  }
+  
+  const numberPotions = RAW.settings.base_spawn_rate * RAW.
+  for (let i = 0; i < potion; i++) {
+    const coords = getAcceptableCoordinate();
+    retMatrix[coords[0]][coords[1]] = ITEMS.potion;
+  }
+
+  for (let i = 0; i < enemies.length; i++) {
+    retMatrix[enemies[i].x][enemies[i].y] = enemies[i];
+  }    
  
-    for (let i = 0; i < SPAWN.shards.number; i++) {
-      const coords = getAcceptableCoordinate();
+  retMatrix[player.x][player.y] = player;
 
-      entityMatrix[coords[0]][coords[1]] = SHARD;
-    }
-
-    for (let i = 0; i < SPAWN.potions.number; i++) {
-      const coords = getAcceptableCoordinate();
-
-      entityMatrix[coords[0]][coords[1]] = ITEMS.potion;
-    }
-
-    entityMatrix[player.x][player.y] = player;
-
-  function getEntityMatrix() { return entityMatrix; }
-    
-    //Get rid of any monsters right next to player
-    for (let row = (player.x - 1); row < (player.x + 2); row++) {
-      for (let col = (player.y - 1); col < (player.y + 2); col++) {
-        if (entityMatrix[row][col].id === "minion" || entityMatrix[row][col].id === "maxion") {
-          
-          relocateMonsterAtIdx(getEnemyAt(row, col));
-        }
+  //Get rid of any monsters right next to player
+  for (let row = (player.x - 1); row < (player.x + 2); row++) {
+    for (let col = (player.y - 1); col < (player.y + 2); col++) {
+      if (entityMatrix[row][col].id === "minion" 
+      || entityMatrix[row][col].id === "maxion") {    
+        relocateMonsterAtIdx(getEnemyAt(row, col));
       }
     }
+  }
 
-  function getAcceptableCoordinate() {
-    let acceptable = false;
-    let coordsArr = [-1, -1];
+  return retMatrix;
+})();
+    
+function getAcceptableCoordinate() {
+  let acceptable = false;
+  let coordsArr = [-1, -1];
 
-    while (!acceptable) {
-      coordsArr[0] = getRandomCoordinate(map.length);
-      coordsArr[1] = getRandomCoordinate(map[0].length);
+  while (!acceptable) {
+    coordsArr[0] = getRandomCoordinate(map.length);
+    coordsArr[1] = getRandomCoordinate(map[0].length);
 
-      if (map[coordsArr[0]][coordsArr[1]] === MAP.text.floor) {
-        acceptable = true;
-      }
+    if (map[coordsArr[0]][coordsArr[1]] === MAP.text.floor) {
+      acceptable = true;
     }
-    return coordsArr;
   }
-  
-  const cookies = document.cookie;
-
-  function getCookies() {
-    return this.cookies;
-  }
-
-  //initialize by retrieving directly
-  const highscore = getHighScores();
-  
-  let isNewHighScore = false;
-    
-  let keyPressed = -1;
-  let play = true;
-
-  //TODO: find a way for the properties of these to generate automatically from raws!
-  function Minion(coords) {
-    this.id = ENEMIES[0].id;
-    this.hp = ENEMIES[0].hp;
-    this.atk = ENEMIES[0].atk;
-    this.def = ENEMIES[0].def;
-    this.shards = ENEMIES[0].shards;
-    this.x = coords[0];
-    this.y = coords[0];
-    this.hit = ENEMIES[0].hit;
-    this.renderable = ENEMIES[0].renderable;
-  }
-  
-  function Maxion(coords) {
-    this.id = ENEMIES[1].id;
-    this.hp = ENEMIES[1].hp;
-    this.atk = ENEMIES[1].atk;
-    this.def = ENEMIES[1].def;
-    this.shards = ENEMIES[1].shards;
-    this.x = coords[0];
-    this.y = coords[1];
-    this.hit = ENEMIES[1].hit;
-    this.renderable = ENEMIES[1].renderable;
-  }
-
-  function Player(coords) {
-    this.base_hp = PLAYER.base_hp;
-    this.hp = PLAYER.hp;
-    this.atk = PLAYER.atk;
-    this.def = PLAYER.def;
-    this.shards = PLAYER.shards;
-    this.x = coords[0];
-    this.y = coords[1];
-    this.hit = PLAYER.hit;
-    this.renderable = PLAYER.renderable;
-    this.picksUpShard = PLAYER.picksUpShard;
-    this.isLucky = PLAYER.isLucky;
-    this.lucky = PLAYER.lucky;
-  }
-
-  function attack(aggressor, defender) {
-    if (agressor.canFight() && defender.canFight()) {
-  
-      let atkBonus = 0;
-    
-      if (aggressor.id === "minion" || aggressor.id === "maxion") {
-        atkBonus = Math.ceil(level/4);
-      } else {
-        atkBonus = Math.ceil(aggressor.atk/5);
-      }
-      
-      let defenderHit = (random(20) + atkBonus) > defender.def;
-    
-      if (defenderHit) {
-        let dmgToDefender = Math.floor(aggressor.atk/2) + random(Math.ceil(aggressor.atk/2));
-        defender.hit(dmgToDefender);
-        if (defender.hp < 1) {
-          let type = defender.id;
-    
-          if (type === "maxion") {
-            type = "minion";
-          }
-          entityMatrix[defender.x][defender.y] = SPACE;
-          defender.x = -1;
-          defender.y = -1;
-    
-          if (random(2) < 1 && aggressor.base_hp !== undefined) {
-            aggressor.hp++;
-          }
-    
-          for (let i = 0; i < defender.shards; i++) {
-            aggressor.shards++;     
-          }
-    
-          return false;
-        }
-      } else {
-        if (aggressor === player) {
-          VIEW.drawStatus("You missed!");
-        } else if (aggressor.id === "minion") {
-          VIEW.drawStatus("The minion missed!");
-        } else if (aggressor.id === "maxion") {
-          VIEW.drawStatus("The Maxion missed!");
-        }
-      }
-    
-      return true;
-    }
+  return coordsArr;
 }
   
-
-  function getMap() {
-    return map;
-  }
-
-  function enemyMoves(idx) {
+const cookies = document.cookie;
   
-  	let randomMovementChoice = random(2);
-  	
-  	if ((player.x < enemies[idx].X) && (player.y < enemies[idx].y)) {
-  		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
-  		} else {
-  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
-  		}
-  	} else if ((player.x < enemies[idx].x) && (player.y === enemies[idx].y)) {
-  		moveEnemyTo(idx, (enemies[idx].x - 1), enemies[idx].y);
-  	} else if ((player.x < enemies[idx].x) && (player.y > enemies[idx].y)) {
-  		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
-  		} else {
-  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
-  		}
-  	} else if ((player.x === enemies[idx].x) && (player.y < enemies[idx].y)) {
-  		moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y - 1));
-  	} else if ((player.x === enemies[idx].x) && (player.y > enemies[idx].y)) {
-  		moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y + 1));
-  	} else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
-  		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
-  		} else {
-  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
-  		}
-  	} else if ((player.x > enemies[idx].x) && (player.y === enemies[idx].y)) {
-  		moveEnemyTo(idx, (enemies[idx].x + 1), enemies[idx].y);
-  	} else if ((player.x > enemies[idx].x) && (player.y > enemies[idx].y)) {
-  		if (randomMovementChoice === 0) {
-  			moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
-  		} else {
-  			moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
-  		}
-  	}
-  }
+const highscore = getHighScores();
   
-  async function start() {
-    getHighScores();
-   
-//    checkForMobileDevice();
+let isNewHighScore = false;
+    
+let keyPressed = -1;
+let play = true;
+
+function attack(aggressor, defender) {
+  if (agressor.canFight() && defender.canFight()) {
+
+    let atkBonus = 0;
+  
+    if (aggressor.id === "minion" || aggressor.id === "maxion") {
+      atkBonus = Math.ceil(level/4);
+    } else {
+      atkBonus = Math.ceil(aggressor.atk/5);
+    }
+    
+    let defenderHit = (random(20) + atkBonus) > defender.def;
+  
+    if (defenderHit) {
+      let dmgToDefender = Math.floor(aggressor.atk/2) 
+      + random(Math.ceil(aggressor.atk/2));
+      
+      defender.hp -= dmgToDefender;
+
+      if (defender.hp < 1) {
+        let type = defender.id;
+  
+        entityMatrix[defender.x][defender.y] = SPACE;
+        defender.x = -1;
+        defender.y = -1;
+  
+        if (random(2) < 1 && aggressor.isLucky()) {
+          aggressor.lucky();
+        }
+  
+        for (let i = 0; i < defender.shards; i++) {
+          aggressor.shards++;     
+        }
+  
+        return false;
+      }
+    } else {
+      if (aggressor === player) {
+        VIEW.drawStatus("You missed!");
+      } else if (aggressor.id === "minion") {
+        VIEW.drawStatus("The minion missed!");
+      } else if (aggressor.id === "maxion") {
+        VIEW.drawStatus("The Maxion missed!");
+      }
+    }
+  
+    return true;
+  }
+}
+  
+function enemyMoves(idx) {
+  let randomMovementChoice = random(2);
+	
+  if ((player.x < enemies[idx].x) && (player.y < enemies[idx].y)) {
+    if (randomMovementChoice === 0) {
+      moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
+    } else {
+      moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
+    }
+  } else if ((player.x < enemies[idx].x) && (player.y === enemies[idx].y)) {
+    moveEnemyTo(idx, (enemies[idx].x - 1), enemies[idx].y);
+  } else if ((player.x < enemies[idx].x) && (player.y > enemies[idx].y)) {
+    if (randomMovementChoice === 0) {
+      moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
+    } else {
+      moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
+    }
+  } else if ((player.x === enemies[idx].x) && (player.y < enemies[idx].y)) {
+    moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y - 1));
+  } else if ((player.x === enemies[idx].x) && (player.y > enemies[idx].y)) {
+    moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y + 1));
+  } else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
+    if (randomMovementChoice === 0) {
+      moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
+    } else {
+      moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
+    }
+  } else if ((player.x > enemies[idx].x) && (player.y === enemies[idx].y)) {
+    moveEnemyTo(idx, (enemies[idx].x + 1), enemies[idx].y);
+  } else if ((player.x > enemies[idx].x) && (player.y > enemies[idx].y)) {
+    if (randomMovementChoice === 0) {
+      moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
+    } else {
+      moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
+    }
+  }
+}
+  
+async function start() {
+  //TODO: add this back in after new VIEW is complete
+  //checkForMobileDevice();
      
-    setInterval(VIEW.refreshScreen(map, entityMatrix, player.x, player.y), (1000 / FPS));
+  setInterval(
+    VIEW.refreshScreen(
+      map, 
+      entityMatrix, 
+      player.x, 
+      player.y
+    ), 
+    (1000 / RAW.settings.fps));
   
-  	while (play) {
-  	
-  		await waitingKeypress();
+  while (play) {
+    await waitingKeypress();
   
-  		if (keyPressed > 0) {
-  			loop();
-  		}	
-  	}
-  
-    maybeUpdateHighScores();
-    
-    if (isNewHighScore) {
-      VIEW.drawStatus("New high score!");
-    }
-  
-    clearInterval();
+    if (keyPressed > 0) {
+      loop();
+    }	
   }
   
-  function loop() {
-  
-    console.log("Player's coords: " + player.x + ", " + player.y);
-    if (player.shards !== 0 &&
-      player.shards % 7 == 0) {
-      randomRegen();
-    }
-  
-  	//Get coordinates of proposed player move
-  	let proposedPlayerX = player.x;
-  	let proposedPlayerY = player.y;
+  maybeUpdateHighScores();
     
-  	if (KEYMAP[keyPressed] === LEFT) {
-  		proposedPlayerY--;
-  	} else if (KEYMAP[keyPressed] === RIGHT) {
-  		proposedPlayerY++;
-  	} else if (KEYMAP[keyPressed] === UP) {
-  		proposedPlayerX--;
-  	} else if (KEYMAP[keyPressed] === DOWN) {
-  		proposedPlayerX++;
-  	} else if (KEYMAP[keyPressed] === DOWNRIGHT) {
-  		proposedPlayerX++;
-  		proposedPlayerY++;
-  	} else if (KEYMAP[keyPressed] === DOWNLEFT) {
-  		proposedPlayerX++;
-  		proposedPlayerY--;
-  	} else if (KEYMAP[keyPressed] === UPRIGHT) {
-  		proposedPlayerX--;
-  		proposedPlayerY++;
-  	} else if (KEYMAP[keyPressed] === UPLEFT) {
-  		proposedPlayerX--;
-  		proposedPlayerY--;
-  	}
-  
-  
-    //These conditions need to prevent the player from moving (and also updating the player x and y coordinates incorrectly)
-  	let monsterPresent = false;
-    let moveDownStairs = false;
-  
-  	//Complete player's move based on what's in the proposed move square
-  	if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
-  		monsterPresent = attack(player, enemies[getEnemyAt(proposedPlayerX,proposedPlayerY)]);
-    }
-  
-  	if (!monsterPresent && checkForShards(proposedPlayerX,proposedPlayerY)) {
-  		entityMatrix[proposedPlayerX][proposedPlayerY] = SPACE;
-        player.picksUpShard();
-    }
-  
-  	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
-  		pickupPotion();
-  		entityMatrix[proposedPlayerX][proposedPlayerY] = SPACE;
-  	}
-  
-    if (!monsterPresent && checkForBuffs(proposedPlayerX, proposedPlayerY)) {
-      pickupBuff();
-      Matrix[BUFF][proposedPlayerX][proposedPlayerY] = SPACE;
-    }
-  
-  	if (!monsterPresent && !moveDownStairs && map[proposedPlayerX][proposedPlayerY] !== MAP.text.wall) {
-  		movePlayerTo(proposedPlayerX,proposedPlayerY);
-  	}
-  
-  	//Check for enemies next to player; those enemies attack, others move toward player
-  	for (let i = 0; i < enemies.length; i++) {
-  	
-  		if ((enemies[i].x > 0 && enemies[i].y > 0) && (Math.abs(player.x - enemies[i].x) < 2) && Math.abs(player.y - enemies[i].y < 2)) {
-  			attack(enemies[i],player);
-  		} else {
-  			if (enemies[i].id === "maxion" || random(20) > 1) {
-  				enemyMoves(i);
-  			}	
-  		}	
-  	}
-  	
-  	//Check to see if player has died during the loop
-  	if (player.hp < 1) {
-  		player.hp = 0;
-  		play = false;
-  		VIEW.drawStatus("You died.");
-  	}
-    VIEW.refreshScreen(map, entityMatrix, player.x, player.y);
+  if (isNewHighScore) {
+    VIEW.drawStatus("New high score!");
   }
+  
+  clearInterval();
+}
+  
+function loop() {
+  if (player.shards !== 0 &&
+    player.shards % 7 == 0) {
+    randomRegen();
+  }
+
+  //Get coordinates of proposed player move
+  let proposedPlayerX = player.x;
+  let proposedPlayerY = player.y;
+  
+  if (RAW.settings.keymap[keyPressed] === LEFT) {
+    proposedPlayerY--;
+  } else if (RAW.settings.keymap[keyPressed] === RIGHT) {
+    proposedPlayerY++;
+  } else if (RAW.settings.keymap[keyPressed] === UP) {
+    proposedPlayerX--;
+  } else if (RAW.settings.keymap[keyPressed] === DOWN) {
+    proposedPlayerX++;
+  } else if (RAW.settings.keymap[keyPressed] === DOWNRIGHT) {
+    proposedPlayerX++;
+    proposedPlayerY++;
+  } else if (RAW.settings.keymap[keyPressed] === DOWNLEFT) {
+    proposedPlayerX++;
+    proposedPlayerY--;
+  } else if (RAW.settings.keymap[keyPressed] === UPRIGHT) {
+    proposedPlayerX--;
+    proposedPlayerY++;
+  } else if (RAW.settings.keymap[keyPressed] === UPLEFT) {
+    proposedPlayerX--;
+    proposedPlayerY--;
+  }
+
+  //These conditions need to prevent the player from moving 
+  //(and also updating the player x and y coordinates incorrectly)
+  let monsterPresent = false;
+  let moveDownStairs = false;
+
+  //Complete player's move based on what's in the proposed move square
+  if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
+    monsterPresent = attack(
+      player, 
+      enemies[getEnemyAt(proposedPlayerX,proposedPlayerY)]
+    );
+  }
+
+  if (!monsterPresent 
+  && checkForShards(proposedPlayerX,proposedPlayerY)) {
+    entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+    RAW.shard.onConsume(player);
+  }
+
+  if (!monsterPresent 
+  && checkForPotions(proposedPlayerX,proposedPlayerY)){
+    pickupPotion();
+    entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+  }
+
+  if (!monsterPresent && 
+  checkForBuffs(proposedPlayerX, proposedPlayerY)) {
+    pickupBuff();
+    entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+  }
+
+  if (!monsterPresent && !moveDownStairs 
+  && map[proposedPlayerX][proposedPlayerY] !== RAW.map.text.wall) {
+    movePlayerTo(proposedPlayerX,proposedPlayerY);
+  }
+
+  //Check for enemies next to player
+  //Those enemies attack, others move toward player
+  for (let i = 0; i < enemies.length; i++) {
+    if ((enemies[i].x > 0 && enemies[i].y > 0) 
+    && (Math.abs(player.x - enemies[i].x) < 2) 
+    && Math.abs(player.y - enemies[i].y < 2)) {
+      attack(enemies[i],player);
+    } else {
+      if (enemies[i].id === "maxion" || random(20) > 1) {
+        enemyMoves(i);
+      }	
+    }	
+  }
+	
+  //Check to see if player has died during the loop
+  if (player.hp < 1) {
+    player.hp = 0;
+    play = false;
+    VIEW.drawStatus("You died.");
+  }
+}
   
   function pickupBuff() {
   }
@@ -594,7 +509,7 @@ function waitingKeypress() {
 	document.addEventListener('touchstart', handleTouchStart);        
    	document.addEventListener('touchmove', handleTouchMove);
     function onKeyHandler(e) {
-	for (key in KEYMAP) {
+	for (key in RAW.settings.keymap) {
 		if (e.keyCode === parseInt(key)) {
         		document.removeEventListener('keydown', onKeyHandler);
 			keyPressed = e.keyCode;
