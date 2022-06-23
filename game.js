@@ -1,9 +1,63 @@
-  const map = generateLevel();
-  
-  //Locate player on map
-  const playerCoords = getAcceptableCoordinate();
-  player.x = playerCoords[0];
-  player.y = playerCoords[1];
+const Entity = {
+    "id": "",
+    "coords": {
+        "x": -1,
+        "y": -1,
+    },
+    "canFight": function () {
+      if (this.hp !== undefined
+      && this.atk !== undefined
+      && this.def !== undefined) {
+          return true;
+      } else {
+          return false;
+      }
+    },
+    "holdsShards": function() {
+      if (this.shards !== undefined) {
+          return true;
+      } else {
+          return false;
+      }
+    },
+    "isLucky": function () {
+      if (this.lucky !== undefined) {
+          return true;
+      } else {
+          return false;
+      }
+    },
+    "canSpawn": function () {
+      if (this.spawnRate !== undefined) {
+          return true;
+      } else {
+          return false;
+      }
+    },
+    "canBeConsumed": function () {
+      if (this.onConsume !== undefined) {
+          return true;
+      } else {
+          return false;
+      }
+    },
+    "render": {
+        "symbol": "",
+        "color": ""
+    }
+}
+
+if (typeof Object.beget !== 'function') {
+    Object.beget = function (o) {
+      let F = function () {};
+      F.prototype = o;
+      return new F();
+    };
+  }
+
+const map = generateLevel();
+ 
+const player = new Player(getAcceptableCoordinate());
 
   const enemies = (function() {
     const retArr = [];
@@ -12,10 +66,13 @@
       const numberEnemies =
       Math.floor(SPAWN.enemy.number * ENEMIES[i].spawnRate);
       for (let j = 0; j < numberEnemies; j++) {
-        const enemy = Object.beget(ENEMIES[i]);
-        const coords = getAcceptableCoordinate();
-        enemy.x = coords[0];
-        enemy.y = coords[1];
+        //TODO: find a better, more generative way to do this
+        let enemy = {};
+        if (ENEMIES[i].id === "minion") {
+          enemy = new Minion(getAcceptableCoordinate());
+        } else {
+          enemy = new Maxion(getAcceptableCoordinate());
+        }
         retArr.push(enemy); 
       }
     }
@@ -26,7 +83,6 @@
   //this is to initialize... how to refresh? Track monster locations before moves/attacks, then check every monster that moved and update? Or just flash it every time?
   const entityMatrix = initializeMatrix(map.length,map[0].length,SPACE);
 
-    entityMatrix[player.x][player.y] = player.renderable.symbol;
 
     for (let i = 0; i < enemies.length; i++) {
       entityMatrix[enemies[i].x][enemies[i].y] = enemies[i];
@@ -44,6 +100,7 @@
       entityMatrix[coords[0]][coords[1]] = ITEMS.potion;
     }
 
+    entityMatrix[player.x][player.y] = player;
 
   function getEntityMatrix() { return entityMatrix; }
     
@@ -85,53 +142,96 @@
     
   let keyPressed = -1;
   let play = true;
-  
-  function attack(aggressor, defender) {
-    let atkBonus = 0;
-  
-    if (aggressor.id === "minion" || aggressor.id === "maxion") {
-      atkBonus = Math.ceil(level/4);
-    } else {
-      atkBonus = Math.ceil(aggressor.atk/5);
-    }
-    
-    let defenderHit = (random(20) + atkBonus) > defender.def;
-  
-    if (defenderHit) {
-      let dmgToDefender = Math.floor(aggressor.atk/2) + random(Math.ceil(aggressor.atk/2));
-      defender.hp -= dmgToDefender;
-      if (defender.hp < 1) {
-        let type = defender.id;
-  
-        if (type === "M") {
-          type = "m";
-        }
-        entityMatrix[defender.x][defender.y] = SPACE;
-        defender.x = -1;
-        defender.y = -1;
-  
-        if (random(2) < 1 && aggressor.hp < aggressor.base_hp) {
-          aggressor.hp++;
-        }
-  
-        for (let i = 0; i < defender.shards; i++) {
-          pickupShard(aggressor);     
-        }
-  
-        return false;
-      }
-    } else {
-      if (aggressor === player) {
-        VIEW.drawStatus("You missed!");
-      } else if (aggressor.id === "minion") {
-        VIEW.drawStatus("The minion missed!");
-      } else if (aggressor.TYPE === "maxion") {
-        VIEW.drawStatus("The Maxion missed!");
-      }
-    }
-  
-    return true;
+
+  //TODO: find a way for the properties of these to generate automatically from raws!
+  function Minion(coords) {
+    this.id = ENEMIES[0].id;
+    this.hp = ENEMIES[0].hp;
+    this.atk = ENEMIES[0].atk;
+    this.def = ENEMIES[0].def;
+    this.shards = ENEMIES[0].shards;
+    this.x = coords[0];
+    this.y = coords[0];
+    this.hit = ENEMIES[0].hit;
+    this.renderable = ENEMIES[0].renderable;
   }
+  
+  function Maxion(coords) {
+    this.id = ENEMIES[1].id;
+    this.hp = ENEMIES[1].hp;
+    this.atk = ENEMIES[1].atk;
+    this.def = ENEMIES[1].def;
+    this.shards = ENEMIES[1].shards;
+    this.x = coords[0];
+    this.y = coords[1];
+    this.hit = ENEMIES[1].hit;
+    this.renderable = ENEMIES[1].renderable;
+  }
+
+  function Player(coords) {
+    this.base_hp = PLAYER.base_hp;
+    this.hp = PLAYER.hp;
+    this.atk = PLAYER.atk;
+    this.def = PLAYER.def;
+    this.shards = PLAYER.shards;
+    this.x = coords[0];
+    this.y = coords[1];
+    this.hit = PLAYER.hit;
+    this.renderable = PLAYER.renderable;
+    this.picksUpShard = PLAYER.picksUpShard;
+    this.isLucky = PLAYER.isLucky;
+    this.lucky = PLAYER.lucky;
+  }
+
+  function attack(aggressor, defender) {
+    if (agressor.canFight() && defender.canFight()) {
+  
+      let atkBonus = 0;
+    
+      if (aggressor.id === "minion" || aggressor.id === "maxion") {
+        atkBonus = Math.ceil(level/4);
+      } else {
+        atkBonus = Math.ceil(aggressor.atk/5);
+      }
+      
+      let defenderHit = (random(20) + atkBonus) > defender.def;
+    
+      if (defenderHit) {
+        let dmgToDefender = Math.floor(aggressor.atk/2) + random(Math.ceil(aggressor.atk/2));
+        defender.hit(dmgToDefender);
+        if (defender.hp < 1) {
+          let type = defender.id;
+    
+          if (type === "maxion") {
+            type = "minion";
+          }
+          entityMatrix[defender.x][defender.y] = SPACE;
+          defender.x = -1;
+          defender.y = -1;
+    
+          if (random(2) < 1 && aggressor.base_hp !== undefined) {
+            aggressor.hp++;
+          }
+    
+          for (let i = 0; i < defender.shards; i++) {
+            aggressor.shards++;     
+          }
+    
+          return false;
+        }
+      } else {
+        if (aggressor === player) {
+          VIEW.drawStatus("You missed!");
+        } else if (aggressor.id === "minion") {
+          VIEW.drawStatus("The minion missed!");
+        } else if (aggressor.id === "maxion") {
+          VIEW.drawStatus("The Maxion missed!");
+        }
+      }
+    
+      return true;
+    }
+}
   
 
   function getMap() {
@@ -247,9 +347,9 @@
     }
   
   	if (!monsterPresent && checkForShards(proposedPlayerX,proposedPlayerY)) {
-  		pickupShard(player);	
   		entityMatrix[proposedPlayerX][proposedPlayerY] = SPACE;
-  	}
+        player.picksUpShard();
+    }
   
   	if (!monsterPresent && checkForPotions(proposedPlayerX,proposedPlayerY)){
   		pickupPotion();
@@ -283,6 +383,7 @@
   		play = false;
   		VIEW.drawStatus("You died.");
   	}
+    VIEW.refreshScreen(map, entityMatrix, player.x, player.y);
   }
   
   function pickupBuff() {
@@ -292,7 +393,8 @@
   }
   
   function pickupShard(entity) {
-  	entity.shards++;  
+      entity.picksUpShard();
+      //	entity.picksUpShard();  
   }
    
   function randomRegen() {
@@ -330,8 +432,8 @@ function checkForMobileDevice() {
 }
 
 function checkForMonsters(x,y) {
-	if (entityMatrix[x][y] === ENEMIES[0].renderable.symbol  || 
-		entityMatrix[x][y] === ENEMIES[1].renderable.symbol) {
+	if (entityMatrix[x][y].id === "minion"  || 
+		entityMatrix[x][y].id === "maxion") {
 		return true;
 	}
 
@@ -339,7 +441,7 @@ function checkForMonsters(x,y) {
 }
 
 function checkForPotions(x,y) {
-	if (entityMatrix[x][y] === ITEMS.potion.renderable.symbol) {
+	if (entityMatrix[x][y] === ITEMS.potion) {
 		return true;
 	}
 
@@ -438,7 +540,7 @@ function monstersCleared() {
 
 function movePlayerTo(x,y) {
 	entityMatrix[player.x][player.y] = SPACE;
-	entityMatrix[x][y] = player.renderable.symbol;
+	entityMatrix[x][y] = player;
 	player.x = x;
 	player.y = y;
 }
@@ -450,7 +552,7 @@ function moveEnemyTo(idx,x,y) {
 			enemies[idx].shards++;
 		}
 
-        entityMatrix[x][y] = enemies[idx].renderable.symbol;
+        entityMatrix[x][y] = enemies[idx];
 		
         enemies[idx].x = x;
 		enemies[idx].y = y;
@@ -609,3 +711,4 @@ function waitingKeypress() {
 	};
   });
 }
+
