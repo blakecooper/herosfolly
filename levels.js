@@ -46,13 +46,13 @@ function generateHallways(level, roomStats, roomRows, roomCols) {
                 //Move from the middle of the room to the nearest wall
                 let ySteps = 0;
 
-                while (level[x][y + ySteps] !== MAP.text.wall) {
+                while (level[x][y + ySteps] !== RAWS.map.text.wall) {
                     ySteps++;
                 }
 
                 y += ySteps;
 
-                level[x][y] = MAP.text.floor;
+                level[x][y] = RAWS.map.text.floor;
 
                 y++;
 
@@ -65,15 +65,15 @@ function generateHallways(level, roomStats, roomRows, roomCols) {
                     }
                 }
             
-                while(y < COLS && level[x][y] !== MAP.text.floor) {
-                    level[x][y] = MAP.text.floor;
+                while(y < COLS && level[x][y] !== RAWS.map.text.floor) {
+                    level[x][y] = RAWS.map.text.floor;
 
                     if (x-1 > 0) {
-                        level[x-1][y] = MAP.text.wall;
+                        level[x-1][y] = RAWS.map.text.wall;
                     }
 
                     if (x+1 < ROWS) {
-                        level[x+1][y] = MAP.text.wall;
+                        level[x+1][y] = RAWS.map.text.wall;
                     }
                 
                     y++;
@@ -81,7 +81,7 @@ function generateHallways(level, roomStats, roomRows, roomCols) {
 
                 //Edge case: a hallway leads off the edge of the map (cap it with a wall)
                 if (y === (COLS)){
-                    level[x][y-1] = MAP.text.wall;
+                    level[x][y-1] = RAWS.map.text.wall;
                 }
             }
 
@@ -93,25 +93,25 @@ function generateHallways(level, roomStats, roomRows, roomCols) {
                 y = Math.floor((roomStats[statsIdx][1] + roomStats[statsIdx][3]) / 2) + (roomCol * MAX_ROOM_SIZE);
 
                 //Find the wall
-                if (level[x][y] !== MAP.text.wall) {
-                    while (level[x][y] !== MAP.text.wall && x < ROWS) {
+                if (level[x][y] !== RAWS.map.text.wall) {
+                    while (level[x][y] !== RAWS.map.text.wall && x < ROWS) {
                         x++;
                     }
                 }
             
-                level[x][y] = MAP.text.floor;
+                level[x][y] = RAWS.map.text.floor;
 
                 x++;
 
-                while (x < ROWS && level[x][y] !== MAP.text.floor) {
-                    level[x][y] = MAP.text.floor;
+                while (x < ROWS && level[x][y] !== RAWS.map.text.floor) {
+                    level[x][y] = RAWS.map.text.floor;
 
                     if (y-1 > 0) {
-                        level[x][y-1] = MAP.text.wall;
+                        level[x][y-1] = RAWS.map.text.wall;
                     }
 
                     if (y+1 < COLS) {
-                        level[x][y+1] = MAP.text.wall;
+                        level[x][y+1] = RAWS.map.text.wall;
                     }
     
                     x++;
@@ -119,7 +119,7 @@ function generateHallways(level, roomStats, roomRows, roomCols) {
 
                 //Edge case: hallways leads off the bottom of the map (cap it with a wall)
                 if (x === (ROWS)){
-                    level[x-1][y] = MAP.text.wall;
+                    level[x-1][y] = RAWS.map.text.wall;
                 }
             }
         }
@@ -160,7 +160,6 @@ function generateLevel(string = "default") {
                 let data = [room.length, room[0].length, rowOffset, colOffset];
 
                 roomStats[(roomRow * roomCols) + roomCol] = data;
-                console.log("Room generated: " + data); 
          //   } else { console.log("Room not generated"); }
 
             if (room !== null) {
@@ -227,13 +226,13 @@ function generateRoom() {
     let room = initializeMatrix(
         random(MAX_ROOM_SIZE - MIN_ROOM_SIZE + 1) + MIN_ROOM_SIZE,
         random(MAX_ROOM_SIZE - MIN_ROOM_SIZE + 1) + MIN_ROOM_SIZE,
-        MAP.text.floor
+        RAWS.map.text.floor
     );
 
     for (let row = 0; row < room.length; row++) {
         for (let col = 0; col < room[0].length; col++) {
             if (row === 0 || col === 0 || row === room.length - 1 || col === room[0].length - 1) {
-                    room[row][col] = MAP.text.wall;
+                    room[row][col] = RAWS.map.text.wall;
             }
         }
     }
@@ -258,7 +257,7 @@ let connected = initializeMatrix(ROWS, COLS, false);
         x = getRandomCoordinate(ROWS);
         y = getRandomCoordinate(COLS);
 
-        if (level[x][y] === MAP.text.floor) {
+        if (level[x][y] === RAWS.map.text.floor) {
             isFloor = true;
         }
     }
@@ -277,7 +276,7 @@ let connected = initializeMatrix(ROWS, COLS, false);
         for (let row = (checkX-1); row < checkX+2; row++) {
             for (let col = (checkY-1); col < checkY+2; col++){
                 if (row !== checkX || col !== checkY) {
-                    if (level[row][col] === MAP.text.floor && !connected[row][col]) {
+                    if (level[row][col] === RAWS.map.text.floor && !connected[row][col]) {
                         connected[row][col] = true;
                         floorList.push([row,col]);
                     }
@@ -288,7 +287,7 @@ let connected = initializeMatrix(ROWS, COLS, false);
 
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
-            if (level[row][col] === MAP.text.floor && connected[row][col] === false) {
+            if (level[row][col] === RAWS.map.text.floor && connected[row][col] === false) {
                 return false;
             }
         }

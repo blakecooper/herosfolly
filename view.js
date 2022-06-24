@@ -56,9 +56,9 @@ const VIEW = {
   },
   
   "drawEntities": function () {
-      draw(ITEMS.potion.renderable.symbol);
-      draw(player.renderable.symbol);
-      draw(SHARD.renderable.symbol);
+      draw(ITEMS.potion.render.symbol);
+      draw(player.render.symbol);
+      draw(SHARD.render.symbol);
   },
   
   "drawMap": function (map, x, y) {
@@ -93,7 +93,8 @@ const VIEW = {
       
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
-              if (map[row][col] !== null) {
+              if (map[row] !== undefined 
+              && map[row][col] !== null) {
                   html += map[row][col];
               } else {
                   html += SPACE;
@@ -138,10 +139,10 @@ const VIEW = {
       
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
-              if (entityMatrix[row][col].renderable !== undefined) {
+              if (entityMatrix[row][col] !== null && entityMatrix[row][col].render !== undefined) {
                   html += "<span style='background-color: " + this.bodyBackground 
-                  + "; color: " + entityMatrix[row][col].renderable.color + "'>";
-                  html += entityMatrix[row][col].renderable.symbol;
+                  + "; color: " + entityMatrix[row][col].render.color + "'>";
+                  html += entityMatrix[row][col].render.symbol;
                   html += "</span>";
               } else {
                   html += SPACE;
@@ -372,11 +373,3 @@ window.addEventListener("load", () => {
 //window.addEventListener("resize", () => {
 //	sizeElementsToWindow();	
 //});
-
-
-
-
-
-
-
-
