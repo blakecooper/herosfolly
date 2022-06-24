@@ -86,8 +86,8 @@ const RAW = {
         "spawnRate": .2,
       }],
     },
-    "items": [
-      {
+    "items": {
+      "potion": {
         "id": "potion",
         "render": {
             "symbol": "!",
@@ -98,18 +98,18 @@ const RAW = {
               consumer.hp++;
           }
         }
-      }],
-    "shards": {
-      "id": "shard",
-      "render": {
-        "symbol": "*",
-        "color": "yellow"
       },
-      "onConsume": function (consumer) {
-        if (consumer.holdsShards()) {
-          consumer.shards++;
+      "shards": {
+        "id": "shard",
+        "render": {
+          "symbol": "*",
+          "color": "yellow"
+        },
+        "onConsume": function (consumer) {
+          if (consumer.holdsShards()) {
+            consumer.shards++;
+          }
         }
       }
     }
   }
-}

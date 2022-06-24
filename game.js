@@ -6,7 +6,7 @@ const player = (function() {
   retVal.x = coords[0];
   retVal.y = coords[1];
   return retVal;
-}
+})();
 
 const enemies = (function() {
   const retArr = [];
@@ -44,8 +44,8 @@ const entityMatrix = (function() {
     retMatrix[coords[0]][coords[1]] = shard;
   }
   
-  const numberPotions = RAW.settings.base_spawn_rate * RAW.
-  for (let i = 0; i < potion; i++) {
+  const numberPotions = RAW.settings.base_spawn_rate * RAW.entities.potion.spawnRate;
+  for (let i = 0; i < numberPotions; i++) {
     const coords = getAcceptableCoordinate();
     retMatrix[coords[0]][coords[1]] = ITEMS.potion;
   }
@@ -301,66 +301,53 @@ function loop() {
   }
 }
   
-  function pickupBuff() {
-  }
+function pickupBuff() {
+}
   
-  function pickupPotion() {
-  }
+function pickupPotion() {
+}
   
-  function pickupShard(entity) {
-      entity.picksUpShard();
-      //	entity.picksUpShard();  
+function pickupShard(entity) {
+  if (entity.holdsShards()) {
+    entity.shards++;
   }
+}
    
-  function randomRegen() {
-    if (player.hp < player.base_hp) {
-      player.hp++;
-      VIEW.drawStatus("You feel a benevolent presence! 1 HP gained.");
-    }
+function randomRegen() {
+  if (player.hp < player.base_hp) {
+    player.hp++;
+    VIEW.drawStatus("You feel a benevolent presence! 1 HP gained.");
   }
-
-  //The following variables and functions are from utils.js... move them back?
-
-function avoidWalls(axis, value) {
-	let mapDimension = ROWS - 1;
-
-	if (axis === COLS) {
-		mapDimension = COLS - 1;
-	}
-	
-	if (value == 0) { 
-		return ++value;
-	} else if (value == mapDimension) { 
-		return --value;
-	} else {
-		return value;
-	}
 }
 
-function checkForMobileDevice() {
-	window.addEventListener("load", () => {
-		let mobile = navigator.userAgent.toLowerCase().match(/mobile/i);
-		if (mobile !== null) {
-			isMobile = true;
-		}
-	});
+function avoidWalls(axis, value) {
+  let mapDimension = ROWS - 1;
+
+  if (axis === COLS) {
+		mapDimension = COLS - 1;
+  }
+	
+  if (value == 0) { 
+  	return ++value;
+  } else if (value == mapDimension) { 
+    return --value;
+  } else {
+	return value;
+  }
 }
 
 function checkForMonsters(x,y) {
-	if (entityMatrix[x][y].id === "minion"  || 
-		entityMatrix[x][y].id === "maxion") {
-		return true;
-	}
-
-	return false;
+  if (entityMatrix[x][y].isMonstrous()) {
+	return true;
+  }
+  return false;
 }
 
 function checkForPotions(x,y) {
-	if (entityMatrix[x][y] === ITEMS.potion) {
-		return true;
-	}
-
-	return false;
+  if (entityMatrix[x][y].id === "potion") {
+    return true;
+  }
+  return false;
 }
 
 //TODO: redo buffs
@@ -373,257 +360,106 @@ function checkForBuffs(x,y) {
 }
 
 function checkForShards(x,y) {
-	if (entityMatrix[x][y] === SHARD.renderable.symbol) {
-		return true;
-	}
-
-	return false;
+  if (entityMatrix[x][y].id === "shard") {
+    return true;
+  }
+  return false;
 }
 
 function getEnemyAt(x,y) {
-	for (let i = 0; i < enemies.length; i++) {
-		if (enemies[i].x === x && enemies[i].y === y) {
-			return i;
-		}
+  for (let i = 0; i < enemies.length; i++) {
+    if (enemies[i].x === x && enemies[i].y === y) {
+      return i;
     }
-
+  }
 	return -1;
 }
 
 function getHighScores() {
-    const key = "highscores=";
-    let score = "";
+  const key = "highscores=";
+  let score = "";
 
-    if (cookies.length > 0 && cookies.search(key) !== -1) {
+  if (cookies.length > 0 && cookies.search(key) !== -1) {
+    let highscoresString = cookies.substring(cookies.search(key) + key.length);
+    let idx = 0;
 
-        let highscoresString = cookies.substring(cookies.search(key) + key.length);
-
-        let idx = 0;
-
-        while (idx < cookies.length && highscoresString[idx] !== ";") {
-            score += highscoresString[idx];
-            idx++;
-        }
-
-        highscores = parseInt(score);
-    } else {
-        highscores = 0;
+    while (idx < cookies.length && highscoresString[idx] !== ";") {
+      score += highscoresString[idx];
+      idx++;
     }
+
+    highscores = parseInt(score);
+  } else {
+    highscores = 0;
+  }
 }
 
 function getRandomCoordinate(axis) {
-	let mapLimit = ROWS;
+  let mapLimit = ROWS;
 
-	if  (axis === COLS) {
-		mapLimit = COLS;
-	}
-
-    return avoidWalls(axis, random(mapLimit-1));
+  if  (axis === COLS) {
+    mapLimit = COLS;
+  }
+  return avoidWalls(axis, random(mapLimit-1));
 }
 
-function initializeAllMatrices() {
-    for (let grid in Matrix) {
-        Matrix[grid] = initializeMatrix(ROWS, COLS, SPACE);
-    }
-}
-
-function loadAll() {
-    const game = {};
-    
-    return game;
-}
 function maybeUpdateHighScores() {
-
-    if (highscores < player.shards) {
-        highscores = player.shards;
-        isNewHighScore = true;
-    }
+  if (highscores < player.shards) {
+    highscores = player.shards;
+    isNewHighScore = true;
+  }
     
-    document.cookie = "highscores=" + highscores + "; hoarderType=" + typeMonsterKilledPlayer + "; hoardedLevel=" + level + "; shardsLost=" + shardsLost + "; SameSite=Strict;";
-    console.log("cookies updated: " + document.cookie);
-}
-
-function monstersCleared() {
-    for (let i = 0; i < enemies.length; i++) {
-        if (enemies[i].HP > 0) {
-            return false;
-        }
-    }
-
-    return true;
+  document.cookie = "highscores=" + highscores 
+  + "; SameSite=Strict;";
 }
 
 function movePlayerTo(x,y) {
-	entityMatrix[player.x][player.y] = SPACE;
-	entityMatrix[x][y] = player;
-	player.x = x;
-	player.y = y;
+  entityMatrix[player.x][player.y] = SPACE;
+  entityMatrix[x][y] = player;
+  player.x = x;
+  player.y = y;
 }
 
 function moveEnemyTo(idx,x,y) {
-	if (enemies[idx].x > 0 && enemies[idx].y > 0 && map[x][y] === MAP.text.floor && entityMatrix[x][y] === SPACE) {
-		entityMatrix[enemies[idx].x][enemies[idx].y] = SPACE;
-		if (checkForShards(x,y)) {
-			enemies[idx].shards++;
-		}
-
-        entityMatrix[x][y] = enemies[idx];
-		
-        enemies[idx].x = x;
-		enemies[idx].y = y;
+  if (enemies[idx].x > 0 && enemies[idx].y > 0 
+  && map[x][y] === MAP.text.floor 
+  && entityMatrix[x][y] === SPACE) {
+    entityMatrix[enemies[idx].x][enemies[idx].y] = SPACE;
+	if (checkForShards(x,y)) {
+	  enemies[idx].shards++;
 	}
+
+    entityMatrix[x][y] = enemies[idx];
+		
+    enemies[idx].x = x;
+	enemies[idx].y = y;
+  }
 } 
 
 function noEntitiesOnSquare(checkX, checkY) {
-  if (entityMatrix[checkX] !== undefined && entityMatrix[checkX][checkY] !== SPACE) {
+  if (entityMatrix[checkX] !== undefined 
+  && entityMatrix[checkX][checkY] !== null) {
     return false;
-    }
-  return true;
   }
-
-function random(value) {
-	return Math.floor(Math.random() * value);
+  return true;
 }
 
 function relocateMonsterAtIdx(i) {
-    let acceptablePlacement = false;
+  let acceptablePlacement = false;
 
-    while (!acceptablePlacement) {
-        let x = getRandomCoordinate(ROWS);
-        let y = getRandomCoordinate(COLS);
+  while (!acceptablePlacement) {
+    let x = getRandomCoordinate(ROWS);
+    let y = getRandomCoordinate(COLS);
 
-        if (map[x][y] === MAP.text.floor && noEntitiesOnSquare(x, y)) {
-	    entityMatrix[enemies[i].x][enemies[i].y] = SPACE;
+    if (map[x][y] === RAW.map.text.floor 
+    && noEntitiesOnSquare(x, y)) {
+      entityMatrix[enemies[i].x][enemies[i].y] = null;
 
-            enemies[i].x = x;
-            enemies[i].y = y;
+      enemies[i].x = x;
+      enemies[i].y = y;
 
-            acceptablePlacement = true;
-        }
+      entityMatrix[x][x] = enemies[i];
+      acceptablePlacement = true;
     }
+  }
 }
-
-function waitingKeypress() {
-  return new Promise((resolve) => {
-    document.addEventListener('keydown', onKeyHandler);
-	document.addEventListener('touchstart', handleTouchStart);        
-   	document.addEventListener('touchmove', handleTouchMove);
-    function onKeyHandler(e) {
-	for (key in RAW.settings.keymap) {
-		if (e.keyCode === parseInt(key)) {
-        		document.removeEventListener('keydown', onKeyHandler);
-			keyPressed = e.keyCode;
-			resolve();
-		}
-      }
-    }
-    	var xDown = null;                                                        	var yDown = null;
-
-	function getTouches(evt) {
-  		return evt.touches ||             // browser API
-         	evt.originalEvent.touches; // jQuery
-	}                                                     
-                                                                         
-	function handleTouchStart(evt) {
-    		const firstTouch = getTouches(evt)[0];                                      
-    		xDown = firstTouch.clientX;                                     
-    		yDown = firstTouch.clientY;                                      
-	};                                                
-                                                                         
-	function handleTouchMove(evt) {
-		//detect quadrant
-		//determine slop of line
-		//designate x, y or x+y shift as necessary
-
-		if ( ! xDown || ! yDown ) {
-        		return;
-    		}
-    	
-		var xUp = evt.touches[0].clientX;                                   		
-		var yUp = evt.touches[0].clientY;
-
-    		var xDiff = xDown - xUp;
-    		var yDiff = yDown - yUp;
-                
-		let slope = yDiff/xDiff;
-            
-		if (xDiff > 0 && yDiff > 0) {
-			//Quadrant IV
-			if (slope < .7) {
-				keyPressed = 100;
-			} else if (slope === .7) {
-				keyPressed = 103;
-			} else if (slope > .7 && slope < 1.8) {
-				keyPressed = 103;	
-			} else if (slope === 1.8) {
-				keyPressed = 103;
-			} else if (slope > 1.8) {
-				keyPressed = 104;
-			}
-		} else if (xDiff > 0 && yDiff < 0) {
-			//Quadrant III
-			if (slope > -.7) {
-				keyPressed = 100;
-			} else if (slope === -.7) {
-				keyPressed = 97;
-			} else if (slope < -.7 && slope > -1.8) {
-				keyPressed = 97;	
-			} else if (slope === -1.8) {
-				keyPressed = 97;
-			} else if (slope < -1.8) {
-				keyPressed = 98;
-			}
-		} else if (xDiff < 0 && yDiff > 0) {
-			//Quadrant I
-			if (slope > -.7) {
-				keyPressed = 102;
-			} else if (slope === -.7) {
-				keyPressed = 105;
-			} else if (slope < -.7 && slope > -1.8) {
-				keyPressed = 105;	
-			} else if (slope === -1.8) {
-				keyPressed = 105;
-			} else if (slope < -1.8) {
-				keyPressed = 104;
-			}
-		} else if (xDiff < 0 && yDiff < 0) {
-			//Quadrant II
-			if (slope < .7) {
-				keyPressed = 102;
-			} else if (slope === .7) {
-				keyPressed = 99;
-			} else if (slope > .7 && slope < 1.8) {
-				keyPressed = 99;	
-			} else if (slope === 1.8) {
-				keyPressed = 99;
-			} else if (slope > 1.8) {
-				keyPressed = 98;
-			}
-		} else {               
-    		//This should only fire if one of the x or y values is 0
-		if ( Math.abs( xDiff ) > Math.abs( yDiff ) ) {/*most significant*/
-        		if ( xDiff > 0 ) {
-            			keyPressed = 100; 
-        		} else {
-            			keyPressed = 102;
-        		}                       
-    		} else {
-        		if ( yDiff > 0 ) {
-            			keyPressed = 104;
-        		} else { 
-            			keyPressed = 98;
-        		}                                                                 
-    		}
-		}
-    
-		/* reset values */
-    		xDown = null;
-    		yDown = null;                   
-		document.removeEventListener('touchstart', handleTouchStart);        
-   		document.removeEventListener('touchmove', handleTouchMove);
-		resolve();                          
-
-	};
-  });
-}
-
