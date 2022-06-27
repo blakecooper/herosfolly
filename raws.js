@@ -64,35 +64,33 @@ const RAWS = {
         }  
       }
     },
-    "enemies": { 
-      "minion": {
-        "id": "minion",
-        "base_hp": 10,
-        "hp": 10,
-        "atk": 4,
-        "def": 3,
-        "shards": 0,
-        "renderable": {
-          "symbol": "m",
-          "color": "red"
-        },
-        "spawnRate": 1,
+    "minion": {
+      "id": "minion",
+      "base_hp": 10,
+      "hp": 10,
+      "atk": 4,
+      "def": 3,
+      "shards": 0,
+      "renderable": {
+        "symbol": "m",
+        "color": "red"
+      },
+      "spawnRate": 1,
 	"isMonstrous": true
+    },
+    "maxion": {
+      "id": "maxion",
+      "base_hp": 22,
+      "hp": 22,
+      "atk": 6,
+      "def": 6,
+      "shards": 0,
+      "renderable": {
+        "symbol": "M",
+        "color": "red"
       },
-      "maxion": {
-        "id": "maxion",
-        "base_hp": 22,
-        "hp": 22,
-        "atk": 6,
-        "def": 6,
-        "shards": 0,
-        "renderable": {
-          "symbol": "M",
-          "color": "red"
-        },
-        "spawnRate": .2,
-        "isMonstrous": true
-      },
+      "spawnRate": .2,
+      "isMonstrous": true
     },
     "items": {
       "potion": {
@@ -121,12 +119,13 @@ const RAWS = {
       }
     },
   },
-  "getListOf": function (o) {
+  "getListOf": function (prop, value) {
     const retVal = [];
-    if (this.entities[o] !== undefined) {
-      for (prop in this.entities[o]) {
-        retVal.push(this.entities[o][prop]);
-      }
+    for (entity in this) {
+        if (this[entity][prop] !== undefined
+        && this[entity][prop] == value) {
+          retVal.push(this[entity]);
+        }
     }
     return retVal;
   }

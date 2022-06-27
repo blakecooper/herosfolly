@@ -11,8 +11,12 @@ const player = (function() {
 const enemies = (function() {
   const retArr = [];
   
-  const enemyTypes = RAWS.getListOf("enemies");
-  
+  const enemyTypes = RAWS.getListOf("isMonstrous", "true");
+for (prop in enemyTypes[0]) {
+    console.log(prop + ": " + enemyTypes[0][prop]);
+
+}
+console.log("testing raws query: " + RAWS.entities.enemies[enemyTypes[0].id]);
   for (let i = 0; i < enemyTypes.length; i++) {
     const numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
     * RAWS.entities.enemies[enemyTypes[i].id].spawnRate);
@@ -26,7 +30,11 @@ const enemies = (function() {
   }
   return retArr; 
 })();
-  
+
+for (prop in enemies[0]) {
+    console.log(prop + ": " + enemies[0][prop]);
+
+}
 const entityMatrix = (function() {
   const retMatrix = initializeMatrix(map.length,map[0].length,null);
 

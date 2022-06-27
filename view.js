@@ -55,12 +55,6 @@ const VIEW = {
       this.draw(entities, x, y);
   },
   
-  "drawEntities": function () {
-      draw(ITEMS.potion.render.symbol);
-      draw(player.render.symbol);
-      draw(SHARD.render.symbol);
-  },
-  
   "drawMap": function (map, x, y) {
       $("level").innerHTML = "";
 	let html = "";
@@ -136,7 +130,8 @@ const VIEW = {
   
       if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
       if (endCol === COLS) { colz = COLS-this.colsVisible; }
-      
+ 
+      console.log("entityMatrix at time of drawing: " + entityMatrix);
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
               if (entityMatrix[row][col] !== null && entityMatrix[row][col].render !== undefined) {
