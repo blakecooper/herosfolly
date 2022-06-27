@@ -131,16 +131,16 @@ const VIEW = {
       if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
       if (endCol === COLS) { colz = COLS-this.colsVisible; }
  
-      console.log("entityMatrix at time of drawing: " + entityMatrix);
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
-              if (entityMatrix[row][col] !== null && entityMatrix[row][col].render !== undefined) {
+              if (entityMatrix[row] !== undefined
+              && entityMatrix[row][col] !== null && entityMatrix[row][col].render !== undefined) {
                   html += "<span style='background-color: " + this.bodyBackground 
                   + "; color: " + entityMatrix[row][col].render.color + "'>";
                   html += entityMatrix[row][col].render.symbol;
                   html += "</span>";
               } else {
-                  html += SPACE;
+                  html += CONSTS.SPACE;
               }
           }
           html += "<br>";
@@ -167,9 +167,7 @@ const VIEW = {
   },
   "drawStatus": function (message) {
     $("status").innerHTML = message;
-    let timeout = setTimeout(function() {
-      this.clearStatus();
-    }, 1000 * SECONDS_DISPLAY_STATUS);
+    let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
   },
  
   "rowsVisible": -1,
@@ -192,12 +190,12 @@ const VIEW = {
 
     origFont = origFont.substring(0,idx);
 
-    let rows = Math.floor(screenHeight/(origFont)*DEFAULT_FONT_SIZE);
+    let rows = Math.floor(screenHeight/(origFont)*RAWS.settings.default_font_size);
     //this is necessary because the font is not square (yet):
     rows /= 3;
     
-    let cols = Math.floor(screenWidth/(origFont) * DEFAULT_FONT_SIZE);
-    $('body').style.fontSize = DEFAULT_FONT_SIZE + "em";
+    let cols = Math.floor(screenWidth/(origFont) *RAWS.settings.default_font_size);
+    $('body').style.fontSize =RAWS.settings.default_font_size + "em";
 
     this.rowsVisible = rows;
     this.colsVisible = cols;

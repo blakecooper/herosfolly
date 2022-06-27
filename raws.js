@@ -3,29 +3,29 @@ const RAWS = {
     "default_font_size": 1.5,
     "base_spawn_rate": 500,
     "keymap": {
-       "37": LEFT,
-       "38": UP,
-       "39": RIGHT,
-       "40": DOWN,
-       "49": DOWNLEFT,
-       "50": DOWN,
-       "51": DOWNRIGHT,
-       "52": LEFT,
-       "52": WAIT,
-       "54": RIGHT,
-       "55": UPLEFT,
-       "56": UP,
-       "57": UPRIGHT,
-       "97": DOWNLEFT,
-       "98": DOWN,
-       "99": DOWNRIGHT,
-       "100": LEFT,
-       "101": WAIT,
-       "102": RIGHT,
-       "103": UPLEFT,
-       "104": UP,
-       "105": UPRIGHT,
-       "190": WAIT
+       "37": CONSTS.LEFT,
+       "38": CONSTS.UP,
+       "39": CONSTS.RIGHT,
+       "40": CONSTS.DOWN,
+       "49": CONSTS.DOWNLEFT,
+       "50": CONSTS.DOWN,
+       "51": CONSTS.DOWNRIGHT,
+       "52": CONSTS.LEFT,
+       "52": CONSTS.WAIT,
+       "54": CONSTS.RIGHT,
+       "55": CONSTS.UPLEFT,
+       "56": CONSTS.UP,
+       "57": CONSTS.UPRIGHT,
+       "97": CONSTS.DOWNLEFT,
+       "98": CONSTS.DOWN,
+       "99": CONSTS.DOWNRIGHT,
+       "100": CONSTS.LEFT,
+       "101": CONSTS.WAIT,
+       "102": CONSTS.RIGHT,
+       "103": CONSTS.UPLEFT,
+       "104": CONSTS.UP,
+       "105": CONSTS.UPRIGHT,
+       "190": CONSTS.WAIT
     },
     "fps": 24,
     "seconds_display_status": 3
@@ -54,7 +54,7 @@ const RAWS = {
       "atk": 10,
       "def": 10,
       "shards": 0,
-      "renderable": {
+      "render": {
         "symbol": "@",
         "color": "WHITE"
       },
@@ -71,7 +71,7 @@ const RAWS = {
       "atk": 4,
       "def": 3,
       "shards": 0,
-      "renderable": {
+      "render": {
         "symbol": "m",
         "color": "red"
       },
@@ -85,46 +85,59 @@ const RAWS = {
       "atk": 6,
       "def": 6,
       "shards": 0,
-      "renderable": {
+      "render": {
         "symbol": "M",
         "color": "red"
       },
       "spawnRate": .2,
       "isMonstrous": true
     },
-    "items": {
-      "potion": {
-        "id": "potion",
-        "render": {
-            "symbol": "!",
-            "color": ""
-        },
-        "onConsume": function (consumer) {
-          if (consumer.canFight()) {
-              consumer.hp++;
-          }
+    "potion": {
+      "id": "potion",
+      "render": {
+          "symbol": "!",
+          "color": ""
+      },
+      "onConsume": function (consumer) {
+        if (consumer.canFight()) {
+            consumer.hp++;
         }
       },
-      "shards": {
-        "id": "shard",
-        "render": {
-          "symbol": "*",
-          "color": "yellow"
-        },
-        "onConsume": function (consumer) {
-          if (consumer.holdsShards()) {
-            consumer.shards++;
-          }
-        }
-      }
+      "spawnRate": 1
     },
+    "shard": {
+      "id": "shard",
+      "render": {
+        "symbol": "*",
+        "color": "yellow"
+      },
+      "onConsume": function (consumer) {
+        if (consumer.holdsShards()) {
+          consumer.shards++;
+        }
+      },
+      "spawnRate": 2
+    },
+    "restore": {
+      "id": "restore",
+      "render": {
+        "symbol": "%",
+        "color": "green"
+      },
+      "onConsume": function (consumer) {
+        if (consumer.canFight()) {
+          consumer.hp = consumer.base_hp;
+        }
+      },
+      "spawnRate": .5
+    }
   },
   "getListOf": function (prop, value) {
     const retVal = [];
-    for (entity in this) {
-        if (this[entity][prop] !== undefined
-        && this[entity][prop] == value) {
-          retVal.push(this[entity]);
+    for (entity in this.entities) {
+        if (this.entities[entity][prop] !== undefined
+        && this.entities[entity][prop] === value) {
+          retVal.push(this.entities[entity]);
         }
     }
     return retVal;

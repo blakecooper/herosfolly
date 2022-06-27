@@ -214,7 +214,7 @@ function generateLevel(string = "default") {
     for (let row = 0; row < ROWS; row++) {
         for (let col = 0; col < COLS; col++) {
             if (level[row][col] === null) {
-                level[row][col] = SPACE;
+                level[row][col] = CONSTS.SPACE;
             }
         }
     }

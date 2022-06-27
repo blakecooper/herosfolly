@@ -11,17 +11,13 @@ const player = (function() {
 const enemies = (function() {
   const retArr = [];
   
-  const enemyTypes = RAWS.getListOf("isMonstrous", "true");
-for (prop in enemyTypes[0]) {
-    console.log(prop + ": " + enemyTypes[0][prop]);
+  const enemyTypes = RAWS.getListOf("isMonstrous", true);
 
-}
-console.log("testing raws query: " + RAWS.entities.enemies[enemyTypes[0].id]);
   for (let i = 0; i < enemyTypes.length; i++) {
     const numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
-    * RAWS.entities.enemies[enemyTypes[i].id].spawnRate);
+    * enemyTypes[i].spawnRate);
     for (let j = 0; j < numberEnemies; j++) {
-      const enemy = RAWS.entities.make("enemies['" + enemyTypes[i].id + "']");
+      const enemy = RAWS.entities.make(enemyTypes[i].id);
       const coords = getAcceptableCoordinate();
       enemy.x = coords[0];
       enemy.y = coords[1];
@@ -31,16 +27,12 @@ console.log("testing raws query: " + RAWS.entities.enemies[enemyTypes[0].id]);
   return retArr; 
 })();
 
-for (prop in enemies[0]) {
-    console.log(prop + ": " + enemies[0][prop]);
-
-}
 const entityMatrix = (function() {
   const retMatrix = initializeMatrix(map.length,map[0].length,null);
 
   const numberShards = RAWS.settings.base_spawn_rate 
-  * RAWS.entities.items.shards.spawnRate;
-  
+  * RAWS.entities.shard.spawnRate;
+ 
   for (let i = 0; i < numberShards; i++) {
     const coords = getAcceptableCoordinate();
     const shard = RAWS.entities.make("shard");
@@ -50,10 +42,24 @@ const entityMatrix = (function() {
     retMatrix[coords[0]][coords[1]] = shard;
   }
   
-  const numberPotions = RAWS.settings.base_spawn_rate * RAWS.entities.items.potion.spawnRate;
-  for (let i = 0; i < numberPotions; i++) {
+  const numberRestore = RAWS.settings.base_spawn_rate
+  * RAWS.entities.restore.spawnRate;
+
+  for (let i = 0; i < numberRestore; i++) {
     const coords = getAcceptableCoordinate();
-    retMatrix[coords[0]][coords[1]] = ITEMS.potion;
+    const restore = RAWS.entities.make("restore");
+    restore.x = coords[0];
+    restore.y = coords[1];
+    retMatrix[coords[0]][coords[1]] = restore;
+  }
+   
+  const numberPotions = RAWS.settings.base_spawn_rate * RAWS.entities.potion.spawnRate;
+  for (let i = 0; i < numberPotions; i++) {
+    const potion = RAWS.entities.make("potion");
+    const coords = getAcceptableCoordinate();
+    potion.x = coords[0];
+    potion.y = coords[1];
+    retMatrix[coords[0]][coords[1]] = potion;
   }
 
   for (let i = 0; i < enemies.length; i++) {
@@ -62,19 +68,19 @@ const entityMatrix = (function() {
  
   retMatrix[player.x][player.y] = player;
 
+
+  return retMatrix;
+})();
   //Get rid of any monsters right next to player
   for (let row = (player.x - 1); row < (player.x + 2); row++) {
     for (let col = (player.y - 1); col < (player.y + 2); col++) {
-      if (retMatrix[row][col] !== null && 
-      (retMatrix[row][col].id === "minion" 
-      || retMatrix[row][col].id === "maxion")) {    
+      if (entityMatrix[row][col] !== null && 
+      (entityMatrix[row][col].id === "minion" 
+      || entityMatrix[row][col].id === "maxion")) {    
         relocateMonsterAtIdx(getEnemyAt(row, col));
       }
     }
   }
-
-  return retMatrix;
-})();
     
 function getAcceptableCoordinate() {
   let acceptable = false;
@@ -106,13 +112,14 @@ function attack(aggressor, defender) {
     let atkBonus = 0;
   
     if (aggressor.id === "minion" || aggressor.id === "maxion") {
+      //atkBonus not working after refactor. Redesign!
       atkBonus = Math.ceil(level/4);
     } else {
       atkBonus = Math.ceil(aggressor.atk/5);
     }
-    
-    let defenderHit = (random(20) + atkBonus) > defender.def;
-  
+    let atkRoll = random(20);
+ 
+    let defenderHit = atkRoll > defender.def;
     if (defenderHit) {
       let dmgToDefender = Math.floor(aggressor.atk/2) 
       + random(Math.ceil(aggressor.atk/2));
@@ -122,7 +129,7 @@ function attack(aggressor, defender) {
       if (defender.hp < 1) {
         let type = defender.id;
   
-        entityMatrix[defender.x][defender.y] = SPACE;
+        entityMatrix[defender.x][defender.y] = null;
         defender.x = -1;
         defender.y = -1;
   
@@ -171,7 +178,7 @@ function enemyMoves(idx) {
     moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y - 1));
   } else if ((player.x === enemies[idx].x) && (player.y > enemies[idx].y)) {
     moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y + 1));
-  } else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
+ } else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
     if (randomMovementChoice === 0) {
       moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
     } else {
@@ -228,24 +235,24 @@ function loop() {
   let proposedPlayerX = player.x;
   let proposedPlayerY = player.y;
   
-  if (RAWS.settings.keymap[keyPressed] === LEFT) {
+  if (RAWS.settings.keymap[keyPressed] === CONSTS.LEFT) {
     proposedPlayerY--;
-  } else if (RAWS.settings.keymap[keyPressed] === RIGHT) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.RIGHT) {
     proposedPlayerY++;
-  } else if (RAWS.settings.keymap[keyPressed] === UP) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.UP) {
     proposedPlayerX--;
-  } else if (RAWS.settings.keymap[keyPressed] === DOWN) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.DOWN) {
     proposedPlayerX++;
-  } else if (RAWS.settings.keymap[keyPressed] === DOWNRIGHT) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.DOWNRIGHT) {
     proposedPlayerX++;
     proposedPlayerY++;
-  } else if (RAWS.settings.keymap[keyPressed] === DOWNLEFT) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.DOWNLEFT) {
     proposedPlayerX++;
     proposedPlayerY--;
-  } else if (RAWS.settings.keymap[keyPressed] === UPRIGHT) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.UPRIGHT) {
     proposedPlayerX--;
     proposedPlayerY++;
-  } else if (RAWS.settings.keymap[keyPressed] === UPLEFT) {
+  } else if (RAWS.settings.keymap[keyPressed] === CONSTS.UPLEFT) {
     proposedPlayerX--;
     proposedPlayerY--;
   }
@@ -266,7 +273,7 @@ function loop() {
   if (!monsterPresent 
   && checkForShards(proposedPlayerX,proposedPlayerY)) {
     entityMatrix[proposedPlayerX][proposedPlayerY] = null;
-    RAWS.shard.onConsume(player);
+    RAWS.entities.shard.onConsume(player);
   }
 
   if (!monsterPresent 
@@ -289,9 +296,9 @@ function loop() {
   //Check for enemies next to player
   //Those enemies attack, others move toward player
   for (let i = 0; i < enemies.length; i++) {
-    if ((enemies[i].x > 0 && enemies[i].y > 0) 
-    && (Math.abs(player.x - enemies[i].x) < 2) 
-    && Math.abs(player.y - enemies[i].y < 2)) {
+    if (enemies[i].x > 0 && enemies[i].y > 0 
+    && Math.abs(player.x - enemies[i].x) < 2 
+    && Math.abs(player.y - enemies[i].y) < 2) {
       attack(enemies[i],player);
     } else {
       if (enemies[i].id === "maxion" || random(20) > 1) {
@@ -306,9 +313,12 @@ function loop() {
     play = false;
     VIEW.drawStatus("You died.");
   }
+
+  VIEW.refreshScreen(map,entityMatrix,player.x,player.y);
 }
   
 function pickupBuff() {
+  player.hp = player.base_hp;
 }
   
 function pickupPotion() {
@@ -361,9 +371,10 @@ function checkForPotions(x,y) {
 
 //TODO: redo buffs
 function checkForBuffs(x,y) {
-//    if (Matrix[BUFF][x][y] === BUFF) {
-//        return true;
-//    }
+    if (entityMatrix[x][y] !== null
+    && entityMatrix[x][y].id === "restore") {
+        return true;
+    }
 
     return false;
 }
@@ -424,7 +435,7 @@ function maybeUpdateHighScores() {
 }
 
 function movePlayerTo(x,y) {
-  entityMatrix[player.x][player.y] = SPACE;
+  entityMatrix[player.x][player.y] = null;
   entityMatrix[x][y] = player;
   player.x = x;
   player.y = y;
@@ -433,8 +444,8 @@ function movePlayerTo(x,y) {
 function moveEnemyTo(idx,x,y) {
   if (enemies[idx].x > 0 && enemies[idx].y > 0 
   && map[x][y] === RAWS.map.text.floor 
-  && entityMatrix[x][y] === SPACE) {
-    entityMatrix[enemies[idx].x][enemies[idx].y] = SPACE;
+  && entityMatrix[x][y] === null) {
+    entityMatrix[enemies[idx].x][enemies[idx].y] = null;
 	if (checkForShards(x,y)) {
 	  enemies[idx].shards++;
 	}
