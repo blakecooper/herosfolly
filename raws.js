@@ -103,7 +103,7 @@ const RAWS = {
             consumer.hp++;
         }
       },
-      "spawnRate": 1
+      "spawnRate": .2
     },
     "shard": {
       "id": "shard",
@@ -129,17 +129,7 @@ const RAWS = {
           consumer.hp = consumer.base_hp;
         }
       },
-      "spawnRate": .5
+      "spawnRate": .2
     }
-  },
-  "getListOf": function (prop, value) {
-    const retVal = [];
-    for (entity in this.entities) {
-        if (this.entities[entity][prop] !== undefined
-        && this.entities[entity][prop] === value) {
-          retVal.push(this.entities[entity]);
-        }
-    }
-    return retVal;
   }
 }

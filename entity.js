@@ -1,10 +1,6 @@
 //Entity prototype used to ensure all entities have basic props
 function Entity () {
   this.id = "";
-  this.coords = {
-    "x": -1,
-    "y": -1,
-  };
   this.isMonstrous = false;
   this.canFight = function () {
     if (this.hp !== undefined
