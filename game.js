@@ -1,62 +1,68 @@
 const GAME = {
 
-  attack: function () {
-
-    if (aggressor.canFight() && defender.canFight()) {
+  playerAttack: function (defender) {
+    if (defender.canFight()) {
   
-      let atkBonus = 0;
-    
-      if (aggressor.id === "minion" || aggressor.id === "maxion") {
-        //atkBonus not working after refactor. Redesign!
-        atkBonus = Math.ceil(level/4);
-      } else {
-        atkBonus = Math.ceil(aggressor.atk/5);
-      }
       let atkRoll = random(20);
    
       let defenderHit = atkRoll > defender.def;
       if (defenderHit) {
-        let dmgToDefender = Math.floor(aggressor.atk/2) 
-        + random(Math.ceil(aggressor.atk/2));
+        let dmgToDefender = Math.floor(this.player.get("atk")/2) 
+        + random(Math.ceil(this.player.get("atk")/2));
         
         defender.hp -= dmgToDefender;
   
         if (defender.hp < 1) {
           let type = defender.id;
     
-          entityMatrix[defender.x][defender.y] = null;
+          this.entityMatrix[defender.x][defender.y] = null;
           defender.x = -1;
           defender.y = -1;
     
-          if (random(2) < 1 && aggressor.isLucky()) {
-            aggressor.lucky();
+          if (random(2)) {
+            this.player.lucky();
           }
     
           for (let i = 0; i < defender.shards; i++) {
-            aggressor.shards++;     
+            this.player.picksUp(shard);     
           }
     
           return false;
         }
       } else {
-        if (aggressor === player) {
-          VIEW.drawStatus("You missed!");
-        } else if (aggressor.id === "minion") {
-          VIEW.drawStatus("The minion missed!");
-        } else if (aggressor.id === "maxion") {
-          VIEW.drawStatus("The Maxion missed!");
-        }
+        VIEW.drawStatus("You missed!");
       }
     
       return true;
     }
   },
 
-  avoidWalls: function (axis, value) {
+  monsterAttack: function (attacker) {
+  
+    let atkRoll = random(20);
+ 
+    let defenderHit = atkRoll > this.player.get("def");
+    if (defenderHit) {
+      let dmgToDefender = Math.floor(attacker.atk/2) 
+      + random(Math.ceil(attacker.atk/2));
+      
+      this.player.hpAdj(-dmgToDefender);
+ 
+      if (this.player.get("hp") < 1) {
+        return false;
+      }
+    } else {
+      VIEW.drawStatus("The " + attacker.id + " missed!");
+    }
+  
+    return true;
+  },
+  
+  avoidEdges: function (axis, value) {
     let mapDimension = ROWS - 1;
   
     if (axis === COLS) {
-  		mapDimension = COLS - 1;
+      mapDimension = COLS - 1;
     }
   	
     if (value == 0) { 
@@ -69,32 +75,32 @@ const GAME = {
   },
 
   checkForBuffs: function (x,y) {
-    if (entityMatrix[x][y] !== null
-    && entityMatrix[x][y].id === "restore") {
+    if (this.entityMatrix[x][y] !== null
+    && this.entityMatrix[x][y].id === "restore") {
       return true;
     }
     return false;
   },
 
   checkForMonsters: function (x,y) {
-    if (entityMatrix[x][y] !== null
-    && entityMatrix[x][y].isMonstrous) {
+    if (this.entityMatrix[x][y] !== null
+    && this.entityMatrix[x][y].isMonstrous) {
 	  return true;
     }
     return false;
   },
 
  checkForPotions: function (x,y) {
-    if (entityMatrix[x][y] !== null
-    && entityMatrix[x][y].id === "potion") {
+    if (this.entityMatrix[x][y] !== null
+    && this.entityMatrix[x][y].id === "potion") {
       return true;
     }
     return false;
   },
 
   checkForShards: function (x,y) {
-    if (entityMatrix[x][y] !== null
-    && entityMatrix[x][y].id === "shard") {
+    if (this.entityMatrix[x][y] !== null
+    && this.entityMatrix[x][y].id === "shard") {
       return true;
     }
     return false;
@@ -102,12 +108,12 @@ const GAME = {
 
   clearMonstersAroundPlayer: function() {
     //Get rid of any monsters right next to player
-    for (let row = (player.x - 1); row < (player.x + 2); row++) {
-      for (let col = (player.y - 1); col < (player.y + 2); col++) {
-        if (entityMatrix[row][col] !== null && 
-        (entityMatrix[row][col].id === "minion" 
-        || entityMatrix[row][col].id === "maxion")) {    
-          relocateMonsterAtIdx(getEnemyAt(row, col));
+    for (let row = (this.player.get("x") - 1); row < (this.player.get("x") + 2); row++) {
+      for (let col = (this.player.get("y") - 1); col < (this.player.get("y") + 2); col++) {
+        if (this.entityMatrix[row][col] !== null && 
+        (this.entityMatrix[row][col].id === "minion" 
+        || this.entityMatrix[row][col].id === "maxion")) {    
+          this.relocateMonsterAtIdx(getEnemyAt(row, col));
         }
       }
     }
@@ -115,7 +121,9 @@ const GAME = {
 
   cookies: document.cookie,
   
-  enemies: (function() {
+  enemies: [],
+
+  populateEnemies: function () {
     const retArr = [];
     
     const enemyTypes = getListOfEntitiesWhere("isMonstrous", true);
@@ -127,53 +135,55 @@ const GAME = {
         retArr.push({ 
           ...new Entity(), 
           ...RAWS.entities[enemyTypes[i].id], 
-          ...getAcceptableCoordinateAsObject() 
+          ...this.getAcceptableCoordinateAsObject() 
         });
       }
     }
     return retArr; 
-  })(),
+  },
 
-  enemyMoves: function() {
+  enemyMoves: function(idx) {
     let randomMovementChoice = random(2);
   	
-    if ((player.x < enemies[idx].x) && (player.y < enemies[idx].y)) {
+    if ((this.player.get("x") < this.enemies[idx].x) && (this.player.get("y") < this.enemies[idx].y)) {
       if (randomMovementChoice === 0) {
-        moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
+        this.moveEnemyTo(idx, (this.enemies[idx].x - 1),(this.enemies[idx].y));
       } else {
-        moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
+        this.moveEnemyTo(idx, (this.enemies[idx].x),(this.enemies[idx].y - 1));
       }
-    } else if ((player.x < enemies[idx].x) && (player.y === enemies[idx].y)) {
-      moveEnemyTo(idx, (enemies[idx].x - 1), enemies[idx].y);
-    } else if ((player.x < enemies[idx].x) && (player.y > enemies[idx].y)) {
+    } else if ((this.player.get("x") < this.enemies[idx].x) && (this.player.get("y") === this.enemies[idx].y)) {
+      this.moveEnemyTo(idx, (this.enemies[idx].x - 1), this.enemies[idx].y);
+    } else if ((this.player.get("x") < this.enemies[idx].x) && (this.player.get("y") > this.enemies[idx].y)) {
       if (randomMovementChoice === 0) {
-        moveEnemyTo(idx, (enemies[idx].x - 1),(enemies[idx].y));
+        this.moveEnemyTo(idx, (this.enemies[idx].x - 1),(this.enemies[idx].y));
       } else {
-        moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
+        this.moveEnemyTo(idx, (this.enemies[idx].x),(this.enemies[idx].y + 1));
       }
-    } else if ((player.x === enemies[idx].x) && (player.y < enemies[idx].y)) {
-      moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y - 1));
-    } else if ((player.x === enemies[idx].x) && (player.y > enemies[idx].y)) {
-      moveEnemyTo(idx, enemies[idx].x, (enemies[idx].y + 1));
-   } else if ((player.x > enemies[idx].x) && (player.y < enemies[idx].y)) {
+    } else if ((this.player.get("x") === this.enemies[idx].x) && (this.player.get("y") < this.enemies[idx].y)) {
+      this.moveEnemyTo(idx, this.enemies[idx].x, (this.enemies[idx].y - 1));
+    } else if ((this.player.get("x") === this.enemies[idx].x) && (this.player.get("y") > this.enemies[idx].y)) {
+      this.moveEnemyTo(idx, this.enemies[idx].x, (this.enemies[idx].y + 1));
+   } else if ((this.player.get("x") > this.enemies[idx].x) && (this.player.get("y") < this.enemies[idx].y)) {
       if (randomMovementChoice === 0) {
-        moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
+        this.moveEnemyTo(idx, (this.enemies[idx].x + 1),(this.enemies[idx].y));
       } else {
-        moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y - 1));
+        this.moveEnemyTo(idx, (this.enemies[idx].x),(this.enemies[idx].y - 1));
       }
-    } else if ((player.x > enemies[idx].x) && (player.y === enemies[idx].y)) {
-      moveEnemyTo(idx, (enemies[idx].x + 1), enemies[idx].y);
-    } else if ((player.x > enemies[idx].x) && (player.y > enemies[idx].y)) {
+    } else if ((this.player.get("x") > this.enemies[idx].x) && (this.player.get("y") === this.enemies[idx].y)) {
+      this.moveEnemyTo(idx, (this.enemies[idx].x + 1), this.enemies[idx].y);
+    } else if ((this.player.get("x") > this.enemies[idx].x) && (this.player.get("y") > this.enemies[idx].y)) {
       if (randomMovementChoice === 0) {
-        moveEnemyTo(idx, (enemies[idx].x + 1),(enemies[idx].y));
+        this.moveEnemyTo(idx, (this.enemies[idx].x + 1),(this.enemies[idx].y));
       } else {
-        moveEnemyTo(idx, (enemies[idx].x),(enemies[idx].y + 1));
+        this.moveEnemyTo(idx, (this.enemies[idx].x),(this.enemies[idx].y + 1));
       }
     }
   },
 
-  entityMatrix: (function() {
-    const retMatrix = initializeMatrix(map.length,map[0].length,null);
+  entityMatrix: [],
+
+  initializeEntityMatrix: function () {
+    const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
   
     const numberShards = RAWS.settings.base_spawn_rate 
     * RAWS.entities.shard.spawnRate;
@@ -182,7 +192,7 @@ const GAME = {
       const shard = {
           ...new Entity(),
           ...RAWS.entities.shard,
-          ...getAcceptableCoordinateAsObject()
+          ...this.getAcceptableCoordinateAsObject()
       }
   
       retMatrix[shard.x][shard.y] = shard;
@@ -195,7 +205,7 @@ const GAME = {
       const restore = {
           ...new Entity(),
           ...RAWS.entities.restore,
-          ...getAcceptableCoordinateAsObject()
+          ...this.getAcceptableCoordinateAsObject()
       }
   
       retMatrix[restore.x][restore.y] = restore;
@@ -206,30 +216,30 @@ const GAME = {
       const potion = {
           ...new Entity(),
           ...RAWS.entities.potion,
-          ...getAcceptableCoordinateAsObject()
+          ...this.getAcceptableCoordinateAsObject()
       }
       
       retMatrix[potion.x][potion.y] = potion;
     }
   
-    for (let i = 0; i < enemies.length; i++) {
-      retMatrix[enemies[i].x][enemies[i].y] = enemies[i];
+    for (let i = 0; i < this.enemies.length; i++) {
+      retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
     }    
    
-    retMatrix[player.x][player.y] = player;
+    retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
   
     return retMatrix;
-  })(),
+  },
  
   getAcceptableCoordinateAsObject: function () {
-    const acceptable = false;
+    let acceptable = false;
     const coordsArr = [-1, -1];
 
     while (!acceptable) {
-      coordsArr[0] = getRandomCoordinate(map.length);
-      coordsArr[1] = getRandomCoordinate(map[0].length);
+      coordsArr[0] = this.getRandomCoordinate(this.map.length);
+      coordsArr[1] = this.getRandomCoordinate(this.map[0].length);
 
-      if (map[coordsArr[0]][coordsArr[1]] === RAWS.map.text.floor) {
+      if (this.map[coordsArr[0]][coordsArr[1]] === RAWS.map.text.floor) {
         acceptable = true;
       }
     }
@@ -237,12 +247,12 @@ const GAME = {
     return {
       x: coordsArr[0],
       y: coordsArr[1]
-    }
+    };
   },
   
   getEnemyAt: function (x,y) {
-    for (let i = 0; i < enemies.length; i++) {
-      if (enemies[i].x === x && enemies[i].y === y) {
+    for (let i = 0; i < this.enemies.length; i++) {
+      if (this.enemies[i].x === x && this.enemies[i].y === y) {
         return i;
       }
     }
@@ -253,18 +263,18 @@ const GAME = {
     const key = "highscores=";
     let score = "";
 
-    if (cookies.length > 0 && cookies.search(key) !== -1) {
-      let highscoresString = cookies.substring(cookies.search(key) + key.length);
+    if (this.cookies.length > 0 && this.cookies.search(key) !== -1) {
+      let highscoresString = this.cookies.substring(this.cookies.search(key) + key.length);
       let idx = 0;
 
-      while (idx < cookies.length && highscoresString[idx] !== ";") {
+      while (idx < this.cookies.length && highscoresString[idx] !== ";") {
         score += highscoresString[idx];
         idx++;
       }
 
-      highscores = parseInt(score);
+      return parseInt(score);
     } else {
-      highscores = 0;
+      return 0;
     }
   },
 
@@ -272,26 +282,26 @@ const GAME = {
     let mapLimit = ROWS;
 
     if  (axis === COLS) {
-      mapLimit = COLS;
+     mapLimit = COLS;
     }
-    return avoidWalls(axis, random(mapLimit-1));
+    return this.avoidEdges(axis, random(mapLimit-1));
   },
   
-  highscore: getHighScores(),
-  
+  highscore: 0,
+ 
   isNewHighScore: false,
     
   keyPressed: -1,
 
   loop: function () {
-    if (player.shards !== 0 &&
-      player.shards % 7 == 0) {
-      randomRegen();
+    if (this.player.shards !== 0 &&
+      this.player.shards % 7 == 0) {
+      this.randomRegen();
     }
   
     //Get coordinates of proposed player move
-    let proposedPlayerX = player.x;
-    let proposedPlayerY = player.y;
+    let proposedPlayerX = this.player.get("x");
+    let proposedPlayerY = this.player.get("y");
     
     if (RAWS.settings.keymap[keyPressed] === CONSTS.LEFT) {
       proposedPlayerY--;
@@ -321,92 +331,90 @@ const GAME = {
     let moveDownStairs = false;
   
     //Complete player's move based on what's in the proposed move square
-    if (checkForMonsters(proposedPlayerX,proposedPlayerY)) {
-      monsterPresent = attack(
-        player, 
-        enemies[getEnemyAt(proposedPlayerX,proposedPlayerY)]
+    if (this.checkForMonsters(proposedPlayerX,proposedPlayerY)) {
+      monsterPresent = this.playerAttack(
+        this.enemies[this.getEnemyAt(proposedPlayerX,proposedPlayerY)]
       );
     }
   
     if (!monsterPresent 
-    && checkForShards(proposedPlayerX,proposedPlayerY)) {
-      entityMatrix[proposedPlayerX][proposedPlayerY] = null;
-      RAWS.entities.shard.onConsume(player);
+    && this.checkForShards(proposedPlayerX,proposedPlayerY)) {
+      this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+      this.pickupShard(this.player);
     }
   
     if (!monsterPresent 
-    && checkForPotions(proposedPlayerX,proposedPlayerY)){
-      pickupPotion();
-      entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+    && this.checkForPotions(proposedPlayerX,proposedPlayerY)){
+      this.pickupPotion();
+      this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
     }
   
     if (!monsterPresent && 
-    checkForBuffs(proposedPlayerX, proposedPlayerY)) {
-      pickupBuff();
-      entityMatrix[proposedPlayerX][proposedPlayerY] = null;
+    this.checkForBuffs(proposedPlayerX, proposedPlayerY)) {
+      this.pickupBuff();
+      this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
     }
   
     if (!monsterPresent && !moveDownStairs 
-    && map[proposedPlayerX][proposedPlayerY] !== RAWS.map.text.wall) {
-      movePlayerTo(proposedPlayerX,proposedPlayerY);
+    && this.map[proposedPlayerX][proposedPlayerY] !== RAWS.map.text.wall) {
+      this.movePlayerTo(proposedPlayerX,proposedPlayerY);
     }
   
     //Check for enemies next to player
     //Those enemies attack, others move toward player
-    for (let i = 0; i < enemies.length; i++) {
-      if (enemies[i].x > 0 && enemies[i].y > 0 
-      && Math.abs(player.x - enemies[i].x) < 2 
-      && Math.abs(player.y - enemies[i].y) < 2) {
-        attack(enemies[i],player);
+    for (let i = 0; i < this.enemies.length; i++) {
+      if (this.enemies[i].x > 0 && this.enemies[i].y > 0 
+      && Math.abs(this.player.get("x") - this.enemies[i].x) < 2 
+      && Math.abs(this.player.get("y") - this.enemies[i].y) < 2) {
+        this.monsterAttack(this.enemies[i]);
       } else {
-        if (enemies[i].id === "maxion" || random(20) > 1) {
-          enemyMoves(i);
+        if (this.enemies[i].id === "maxion" || random(20) > 1) {
+          this.enemyMoves(i);
         }	
       }	
     }
   	
     //Check to see if player has died during the loop
-    if (player.hp < 1) {
-      player.hp = 0;
-      play = false;
+    if (this.player.get("hp") < 1) {
+      this.player.hpAdj(Math.abs(this.player.get("hp")));
+      this.play = false;
       VIEW.drawStatus("You died.");
     }
   
-    VIEW.refreshScreen(map,entityMatrix,player.x,player.y);
+    VIEW.refreshScreen(this.map,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
 
   map: generateLevel(),
 
   maybeUpdateHighScores: function () {
-    if (highscores < player.shards) {
-      highscores = player.shards;
-      isNewHighScore = true;
+    if (this.highscore < this.player.shards) {
+      this.highscore = this.player.shards;
+      this.isNewHighScore = true;
     }
     
-    document.cookie = "highscores=" + highscores 
+    document.cookie = "highscores=" + this.highscore 
       + "; SameSite=Strict;";
   },
 
   movePlayerTo: function (x,y) {
-    entityMatrix[player.x][player.y] = null;
-    entityMatrix[x][y] = player;
-    player.x = x;
-    player.y = y;
+    this.entityMatrix[this.player.get("x")][this.player.get("y")] = null;
+    this.entityMatrix[x][y] = this.player;
+    this.player.updateCoords(x, y);
   },
 
   moveEnemyTo: function (idx,x,y) {
-    if (enemies[idx].x > 0 && enemies[idx].y > 0 
-    && map[x][y] === RAWS.map.text.floor 
-    && entityMatrix[x][y] === null) {
-      entityMatrix[enemies[idx].x][enemies[idx].y] = null;
-	  if (checkForShards(x,y)) {
-	    enemies[idx].shards++;
+    if (this.enemies[idx].x > 0 && this.enemies[idx].y > 0 
+    && this.map[x][y] === RAWS.map.text.floor 
+    && this.entityMatrix[x][y] === null) {
+      this.entityMatrix[this.enemies[idx].x][this.enemies[idx].y] = null;
+	  if (this.checkForShards(x,y)) {
+	    this.enemies[idx].shards++;
 	  }
 
-      entityMatrix[x][y] = enemies[idx];
+      this.entityMatrix[x][y] = this.enemies[idx];
 		
-      enemies[idx].x = x;
-	  enemies[idx].y = y;
+      this.enemies[idx].x = x;
+	  this.enemies[idx].y = y;
     }
   }, 
 
@@ -419,29 +427,66 @@ const GAME = {
   },
 
   pickupBuff: function() {
-    player.hp = player.base_hp;
+    this.player.hpAdj(this.player.get("base_hp")-this.player.get("hp"));
   },
   
   pickupPotion: function () {
   },
   
   pickupShard: function (entity) {
-    if (entity.holdsShards()) {
-      entity.shards++;
-    }
+    entity.picksUp("shards");
   },
    
   play: true,
   
-  player: {
-    ...new Entity(), 
-    ...RAWS.entities.player, 
-    ...getAcceptableCoordinateAsObject() 
-  },
+  player: {},
+
+  initializePlayer: (function() {
+    const p = {
+      ...new Entity(), 
+      ...RAWS.entities.player 
+    };
+
+    return {
+      updateCoords: function (x, y) {
+        p.x = x;
+        p.y = y;
+      },
+      baseHpUp: function () {
+        p.base_hp++;
+      },
+      hpAdj: function (val) {
+        p.hp += val;
+      },
+      atkUp: function () {
+        p.atk++;
+      }, 
+      defUp: function () {
+        p.def++;
+      },
+      picksUp: function (item) {
+        if (item === "shards") {
+          p.shards++;
+        }
+      }, 
+      get: function (prop) {
+        if (p[prop] !== undefined) {
+          return p[prop];
+        }
+      },
+      lucky: function () {
+        p.lucky();
+      },
+      isPlayer: true,
+      holdsShards: function () {
+        p.holdsShards();
+      }
+    };
+  })(),
 
   randomRegen: function () {
-    if (player.hp < player.base_hp) {
-      player.hp++;
+    if (this.player.get("hp") < this.player.get("base_hp")) {
+      this.player.hpAdj(1);
       VIEW.drawStatus("You feel a benevolent presence! 1 HP gained.");
     }
   },
@@ -453,7 +498,7 @@ const GAME = {
       let x = getRandomCoordinate(ROWS);
       let y = getRandomCoordinate(COLS);
   
-      if (map[x][y] === RAWS.map.text.floor 
+      if (this.map[x][y] === RAWS.map.text.floor 
       && noEntitiesOnSquare(x, y)) {
         entityMatrix[enemies[i].x][enemies[i].y] = null;
   
@@ -470,27 +515,36 @@ const GAME = {
 
     //TODO: add this back in after new VIEW is complete
     //checkForMobileDevice();
-       
+
+    this.map = generateLevel(); 
+    this.player = this.initializePlayer;
+
+    const startingCoords = this.getAcceptableCoordinateAsObject();
+
+    this.player.updateCoords(startingCoords.x, startingCoords.y); 
+    this.enemies = this.populateEnemies();
+    this.entityMatrix = this.initializeEntityMatrix();
+    this.highScore = this.getHighScores(); 
     setInterval(
       VIEW.refreshScreen(
-        map, 
-        entityMatrix, 
-        player.x, 
-        player.y
+        this.map, 
+        this.entityMatrix, 
+        this.player.get("x"), 
+        this.player.get("y")
       ), 
       (1000 / RAWS.settings.fps));
     
-    while (play) {
+    while (this.play) {
       await CONTROLLER.waitingKeypress();
     
       if (keyPressed > 0) {
-        loop();
+        GAME.loop();
       }	
     }
     
-    maybeUpdateHighScores();
+    this.maybeUpdateHighScores();
       
-    if (isNewHighScore) {
+    if (this.isNewHighScore) {
       VIEW.drawStatus("New high score!");
     }
     

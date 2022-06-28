@@ -17,7 +17,7 @@ const VIEW = {
   },
 
   "closeSpan": function () {
-    if (player.hp < player.base_hp) {
+    if (GAME.player.get("hp") < GAME.player.get("base_hp")) {
       return "</span>";
     } else {
       return "";
@@ -30,10 +30,10 @@ const VIEW = {
   
       let html = "";
   
-      if (player.hp < player.base_hp) {
+      if (GAME.player.get("hp") < GAME.player.get("base_hp")) {
           html = "<span class=";
   
-          if (player.hp < (player.base_hp / 3)) {
+          if (GAME.player.get("hp") < (GAME.player.get("base_hp") / 3)) {
               html += "red";
           } else {
               html += "yellow";
@@ -91,7 +91,7 @@ const VIEW = {
               && map[row][col] !== null) {
                   html += map[row][col];
               } else {
-                  html += SPACE;
+                  html += CONSTS.SPACE;
               }
   		}    
           
@@ -134,11 +134,18 @@ const VIEW = {
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
               if (entityMatrix[row] !== undefined
-              && entityMatrix[row][col] !== null && entityMatrix[row][col].render !== undefined) {
-                  html += "<span style='background-color: " + this.bodyBackground 
-                  + "; color: " + entityMatrix[row][col].render.color + "'>";
-                  html += entityMatrix[row][col].render.symbol;
-                  html += "</span>";
+              && entityMatrix[row][col] !== null) {
+                    html += "<span style='background-color: " + this.bodyBackground;
+		    if (entityMatrix[row][col].isPlayer === undefined) {
+                      html += "; color: " + entityMatrix[row][col].render.color + "'>";
+                      html += entityMatrix[row][col].render.symbol;
+                      html += "</span>";
+                    } else {
+                      const render = GAME.player.get("render");
+                      html += "; color: " + render.color + "'>";
+                      html += render.symbol;
+                      html += "</span>";
+                    }
               } else {
                   html += CONSTS.SPACE;
               }
@@ -153,17 +160,17 @@ const VIEW = {
   
       $("stats").innerHTML = "hp: " 
           + this.damageSpan()
-  		+ player.hp
+  		+ GAME.player.get("hp")
           + this.closeSpan()
-          + "/" + player.base_hp
+          + "/" + GAME.player.get("base_hp")
           + " atk: "
-  		+ player.atk
+  		+ GAME.player.get("atk")
           + " def: "
-  		+ player.def
+  		+ GAME.player.get("def")
           + " shards: "
-  		+ player.shards
+  		+ GAME.player.get("shards")
           + " top: "
-          + highscores;
+          + GAME.highscore;
   },
   "drawStatus": function (message) {
     $("status").innerHTML = message;
@@ -220,13 +227,13 @@ const VIEW = {
 
   "updateUIColor": function (element, palette) {
       if (element === BACKGROUND) {
-          if (player.DETERIORATION < palette.length) {
-              bodyBackground = palette[player.DETERIORATION]; 
+          if (GAME.player.DETERIORATION < palette.length) {
+              bodyBackground = palette[GAME.player.DETERIORATION]; 
               document.querySelector("body").style.background = bodyBackground;
           }
       } else if (element === TEXT) {
-          if (player.LEECH < palette.length) {
-              textColor = palette[player.LEECH];
+          if (GAME.player.LEECH < palette.length) {
+              textColor = palette[GAME.player.LEECH];
               $("level").style.color = textColor;
               $("stats").style.color = textColor;
               $("status").style.color = textColor;
