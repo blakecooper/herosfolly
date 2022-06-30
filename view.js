@@ -47,18 +47,17 @@ const VIEW = {
   },
   
   "refreshScreen": function (map, dimension, entities, x, y) {
-      this.bodyBackground = dimension.bgColor;
       if (this.rowVisible === -1 || this.colsVisible === -1) {
         this.setDisplaySize();
       };
-      this.drawMap(map, x, y);
+      this.drawMap(map, dimension, x, y);
       this.drawStats();
       this.draw(entities, x, y);
   },
   
-  "drawMap": function (map, x, y) {
+  "drawMap": function (map, dimension, x, y) {
       $("level").innerHTML = "";
-	let html = "";
+	let html = "<span style='color: " + RAWS.colors[dimension.bgColor] + ";'>";
   
       let rowz = (x - Math.floor(this.rowsVisible/2)) > 0 
       ? x-Math.floor(this.rowsVisible/2) : 0;
@@ -98,6 +97,8 @@ const VIEW = {
           
           html += "<br>";
   	}
+
+      html += "</span>";
       $("level").innerHTML = html;
   },
   
@@ -139,13 +140,13 @@ const VIEW = {
             html += "<span style='background-color: ";
             
             if (entityMatrix[row][col].id === "door") {
-              html += RAWS.dimensions[entityMatrix[row][col]["dimension"]]["potionColor"];
+              html += RAWS.colors[RAWS.dimensions[entityMatrix[row][col]["dimension"]]["bgColor"]];
             } else {
               html += this.bodyBackground;
             }
 
 		    if (entityMatrix[row][col].isPlayer === undefined) {
-                      html += "; color: " + entityMatrix[row][col].render.color + "'>";
+                      html += "; color: " + RAWS.colors[entityMatrix[row][col].render.color] + "'>";
                       html += entityMatrix[row][col].render.symbol;
                       html += "</span>";
                     } else {
@@ -166,16 +167,16 @@ const VIEW = {
   
   "drawStats": function () {
   
-      $("stats").innerHTML = "<span style='color: " + RAWS.dimensions.hp.potionColor + ";'>hp: " 
+      $("stats").innerHTML = "<span style='color: " + RAWS.colors[RAWS.dimensions.hp.bgColor] + ";'>hp: " 
           + this.damageSpan()
   		+ GAME.player.get("hp")
           + this.closeSpan()
           + "/" + GAME.player.get("base_hp") + "</span>"
-        + "<span style='color: " + RAWS.dimensions.atk.potionColor + ";'>" 
+        + "<span style='color: " + RAWS.colors[RAWS.dimensions.atk.bgColor] + ";'>" 
           + " atk: "
   		+ GAME.player.get("atk")
         + "</span>"
-        + "<span style='color: " + RAWS.dimensions.def.potionColor + ";'>" 
+        + "<span style='color: " + RAWS.colors[RAWS.dimensions.def.bgColor] + ";'>" 
           + " def: "
   		+ GAME.player.get("def")
         + "</span>"  

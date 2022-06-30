@@ -1,4 +1,14 @@
 const RAWS = {
+  "colors": {
+    "RED": "#A00000",
+    "LIGHTRED": "#F30000",
+    "GREEN": "#00B100",
+    "LIGHTGREEN": "#08FF00",
+    "BLUE": "#115FF0",
+    "LIGHTBLUE": "#0A98DD",
+    "YELLOW": "yellow",
+    "WHITE": "white"
+  },
   "settings": {
     "default_font_size": 1.5,
     "base_spawn_rate": 500,
@@ -35,7 +45,7 @@ const RAWS = {
       "floor": "#",
       "wall": "-",
       "exit": "x",
-      "door": " "
+      "door": "O"
     }
   }, 
   "entities": {
@@ -74,9 +84,9 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "m",
-        "color": "red"
+        "color": "RED"
       },
-      "spawnRate": 1,
+      "spawnRate": .5,
 	"isMonstrous": true
     },
     "maxion": {
@@ -88,9 +98,9 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "M",
-        "color": "red"
+        "color": "RED"
       },
-      "spawnRate": .2,
+      "spawnRate": .1,
       "isMonstrous": true
     },
     "potion": {
@@ -110,7 +120,7 @@ const RAWS = {
       "id": "shard",
       "render": {
         "symbol": "*",
-        "color": "yellow"
+        "color": "YELLOW"
       },
       "onConsume": function (consumer) {
         if (consumer.holdsShards()) {
@@ -123,7 +133,7 @@ const RAWS = {
       "id": "restore",
       "render": {
         "symbol": "%",
-        "color": "green"
+        "color": "GREEN"
       },
       "onConsume": function (consumer) {
         if (consumer.canFight()) {
@@ -139,22 +149,22 @@ const RAWS = {
   },
   "dimensions": {
     "hp": {
-      "bgColor": "black",
-      "potionColor": "green",
+      "bgColor": "GREEN",
+      "potionColor": "LIGHTGREEN",
       "potionEffect": function() {
         GAME.player.baseHpUp();
       }
     },
     "atk": {
-      "bgColor": "red",
-      "potionColor": "red",
+      "bgColor": "RED",
+      "potionColor": "LIGHTRED",
       "potionEffect": function () {
         GAME.player.atkUp();
       }
     },
     "def": {
-      "bgColor": "blue",
-      "potionColor": "blue",
+      "bgColor": "BLUE",
+      "potionColor": "LIGHTBLUE",
       "potionEffect": function () {
         GAME.player.defUp();
       }

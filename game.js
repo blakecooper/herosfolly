@@ -1,13 +1,19 @@
 const GAME = {
 
+  doorsEntered: 0,
+
+  potionsCollected: 0,
+
   dimension: RAWS.dimensions.hp,
 
   playerAttack: function (defender) {
     if (defender.canFight()) {
+
+      const dimensionFactor = 1 + (this.doorsEntered * .1);
   
       let atkRoll = random(20);
    
-      let defenderHit = atkRoll > defender.def;
+      let defenderHit = atkRoll > (defender.def * dimensionFactor);
       if (defenderHit) {
         let dmgToDefender = Math.floor(this.player.get("atk")/2) 
         + random(Math.ceil(this.player.get("atk")/2));
@@ -40,13 +46,15 @@ const GAME = {
   },
 
   monsterAttack: function (attacker) {
-  
-    let atkRoll = random(20);
+ 
+    let dimensionFactor = 1 + (this.doorsEntered * .1); 
+    let atkRoll = random(20) * dimensionFactor;
  
     let defenderHit = atkRoll > this.player.get("def");
     if (defenderHit) {
-      let dmgToDefender = Math.floor(attacker.atk/2) 
-      + random(Math.ceil(attacker.atk/2));
+      let dmgToDefender = Math.floor(attacker.atk/2 
+      + random(attacker.atk/2)
+      * dimensionFactor);
       
       this.player.hpAdj(-dmgToDefender);
  
@@ -187,28 +195,6 @@ const GAME = {
   initializeEntityMatrix: function () {
     const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
 
-    for (dimension in RAWS.dimensions) {
-      if (dimension !== this.dimension) {
-        const numberDoors = RAWS.settings.base_spawn_rate
-        * RAWS.entities.door.spawnRate;
-          
-        for (let i = 0; i < numberDoors; i++) {
-          let door = {
-            ...new Entity(),
-            ...RAWS.entities.door,
-            ...this.getAcceptableCoordinateAsObject()
-          };
-  
-          door.dimension = dimension;
-          door.render = {
-              color: RAWS.dimensions[dimension]["potionColor"],
-              symbol: " "
-          };
-          retMatrix[door.x][door.y] = door;
-        } 
-      }
-    }
-    
     const numberShards = RAWS.settings.base_spawn_rate 
     * RAWS.entities.shard.spawnRate;
    
@@ -219,10 +205,7 @@ const GAME = {
           ...this.getAcceptableCoordinateAsObject()
       };
  
-      if (retMatrix[shard.x][shard.y] !== null 
-      && retMatrix[shard.x][shard.y].id !== "door") {
-        retMatrix[shard.x][shard.y] = shard;
-      }
+      retMatrix[shard.x][shard.y] = shard;
     }
     
     const numberRestore = RAWS.settings.base_spawn_rate
@@ -235,10 +218,7 @@ const GAME = {
           ...this.getAcceptableCoordinateAsObject()
       }
   
-      if (retMatrix[restore.x][restore.y] !== null 
-      && retMatrix[restore.x][restore.y].id !== "door") {
-        retMatrix[restore.x][restore.y] = restore;
-      }
+      retMatrix[restore.x][restore.y] = restore;
     }
      
     const numberPotions = RAWS.settings.base_spawn_rate * RAWS.entities.potion.spawnRate;
@@ -248,23 +228,42 @@ const GAME = {
           ...RAWS.entities.potion,
           ...this.getAcceptableCoordinateAsObject()
       }
-  
-      potion.render.color = this.dimension.potionColor;
-
-      if (retMatrix[potion.x][potion.y] !== null 
-      && retMatrix[potion.x][potion.y].id !== "door") {
-        retMatrix[potion.x][potion.y] = potion;
-      }
+      const dimColor = this.dimension.potionColor;
+      potion.render.color = dimColor;
+      retMatrix[potion.x][potion.y] = potion;
     }
   
     for (let i = 0; i < this.enemies.length; i++) {
-      if (retMatrix[this.enemies[i].x][this.enemies[i].y] !== null 
-      && retMatrix[this.enemies[i].x][this.enemies[i].y].id !== "door") {
-        retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
-      }
+      retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
     }    
    
     retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
+    
+    for (dimension in RAWS.dimensions) {
+      if (RAWS.dimensions[dimension] !== this.dimension) {
+        const numberDoors = RAWS.settings.base_spawn_rate
+        * RAWS.entities.door.spawnRate;
+          
+        for (let i = 0; i < numberDoors; i++) {
+          let door = {
+            ...new Entity(),
+            ...RAWS.entities.door,
+            ...this.getAcceptableCoordinateAsObject()
+          };
+  
+          door.dimension = dimension;
+          door.render = {
+              color: RAWS.dimensions[dimension]["bgColor"],
+              symbol: "O"
+          };
+
+          if (door.x !== this.player.get("x") && door.y !== this.player.get("y")) {
+            retMatrix[door.x][door.y] = door;
+          }  
+        } 
+      }
+    }
+    
   
     return retMatrix;
   },
@@ -392,7 +391,20 @@ const GAME = {
       this.pickupBuff();
       this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
     }
-  
+ 
+    if (this.entityMatrix[proposedPlayerX][proposedPlayerY] !== null
+    && this.entityMatrix[proposedPlayerX][proposedPlayerY].id === "door") {
+      //update dimension
+      this.dimension = RAWS.dimensions[this.entityMatrix[proposedPlayerX][proposedPlayerY].dimension];
+      this.doorsEntered++;
+      //re-initialize entityMatrix
+      this.map = generateLevel();
+      this.enemies = this.populateEnemies();
+      this.entityMatrix = this.initializeEntityMatrix();
+      //skip rest of loop
+      moveDownStairs = true;
+    }
+ 
     if (!monsterPresent && !moveDownStairs 
     && this.map[proposedPlayerX][proposedPlayerY] !== RAWS.map.text.wall) {
       this.movePlayerTo(proposedPlayerX,proposedPlayerY);
@@ -425,13 +437,14 @@ const GAME = {
   map: generateLevel(),
 
   maybeUpdateHighScores: function () {
-    if (this.highscore < this.player.shards) {
-      this.highscore = this.player.shards;
+    if (this.highscore < this.player.get("shards")) {
+      this.highscore = this.player.get("shards");
       this.isNewHighScore = true;
     }
     
     document.cookie = "highscores=" + this.highscore 
       + "; SameSite=Strict;";
+    console.log(document.cookie);
   },
 
   movePlayerTo: function (x,y) {
@@ -469,6 +482,7 @@ const GAME = {
   },
   
   pickupPotion: function () {
+    this.potionsCollected++;
     this.dimension.potionEffect();
   },
   
