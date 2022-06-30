@@ -46,7 +46,8 @@ const VIEW = {
       return html;
   },
   
-  "refreshScreen": function (map, entities, x, y) {
+  "refreshScreen": function (map, dimension, entities, x, y) {
+      this.bodyBackground = dimension.bgColor;
       if (this.rowVisible === -1 || this.colsVisible === -1) {
         this.setDisplaySize();
       };
@@ -132,10 +133,17 @@ const VIEW = {
       if (endCol === COLS) { colz = COLS-this.colsVisible; }
  
       for (let row = rowz; row < endRow; row++) {
-          for (let col = colz; col < endCol; col++) {
-              if (entityMatrix[row] !== undefined
-              && entityMatrix[row][col] !== null) {
-                    html += "<span style='background-color: " + this.bodyBackground;
+        for (let col = colz; col < endCol; col++) {
+          if (entityMatrix[row] !== undefined
+          && entityMatrix[row][col] !== null) {
+            html += "<span style='background-color: ";
+            
+            if (entityMatrix[row][col].id === "door") {
+              html += RAWS.dimensions[entityMatrix[row][col]["dimension"]]["potionColor"];
+            } else {
+              html += this.bodyBackground;
+            }
+
 		    if (entityMatrix[row][col].isPlayer === undefined) {
                       html += "; color: " + entityMatrix[row][col].render.color + "'>";
                       html += entityMatrix[row][col].render.symbol;
@@ -158,15 +166,19 @@ const VIEW = {
   
   "drawStats": function () {
   
-      $("stats").innerHTML = "hp: " 
+      $("stats").innerHTML = "<span style='color: " + RAWS.dimensions.hp.potionColor + ";'>hp: " 
           + this.damageSpan()
   		+ GAME.player.get("hp")
           + this.closeSpan()
-          + "/" + GAME.player.get("base_hp")
+          + "/" + GAME.player.get("base_hp") + "</span>"
+        + "<span style='color: " + RAWS.dimensions.atk.potionColor + ";'>" 
           + " atk: "
   		+ GAME.player.get("atk")
+        + "</span>"
+        + "<span style='color: " + RAWS.dimensions.def.potionColor + ";'>" 
           + " def: "
   		+ GAME.player.get("def")
+        + "</span>"  
           + " shards: "
   		+ GAME.player.get("shards")
           + " top: "

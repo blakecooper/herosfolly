@@ -1,5 +1,7 @@
 const GAME = {
 
+  dimension: RAWS.dimensions.hp,
+
   playerAttack: function (defender) {
     if (defender.canFight()) {
   
@@ -184,7 +186,29 @@ const GAME = {
 
   initializeEntityMatrix: function () {
     const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
+
+    for (dimension in RAWS.dimensions) {
+      if (dimension !== this.dimension) {
+        const numberDoors = RAWS.settings.base_spawn_rate
+        * RAWS.entities.door.spawnRate;
+          
+        for (let i = 0; i < numberDoors; i++) {
+          let door = {
+            ...new Entity(),
+            ...RAWS.entities.door,
+            ...this.getAcceptableCoordinateAsObject()
+          };
   
+          door.dimension = dimension;
+          door.render = {
+              color: RAWS.dimensions[dimension]["potionColor"],
+              symbol: " "
+          };
+          retMatrix[door.x][door.y] = door;
+        } 
+      }
+    }
+    
     const numberShards = RAWS.settings.base_spawn_rate 
     * RAWS.entities.shard.spawnRate;
    
@@ -193,9 +217,12 @@ const GAME = {
           ...new Entity(),
           ...RAWS.entities.shard,
           ...this.getAcceptableCoordinateAsObject()
+      };
+ 
+      if (retMatrix[shard.x][shard.y] !== null 
+      && retMatrix[shard.x][shard.y].id !== "door") {
+        retMatrix[shard.x][shard.y] = shard;
       }
-  
-      retMatrix[shard.x][shard.y] = shard;
     }
     
     const numberRestore = RAWS.settings.base_spawn_rate
@@ -208,7 +235,10 @@ const GAME = {
           ...this.getAcceptableCoordinateAsObject()
       }
   
-      retMatrix[restore.x][restore.y] = restore;
+      if (retMatrix[restore.x][restore.y] !== null 
+      && retMatrix[restore.x][restore.y].id !== "door") {
+        retMatrix[restore.x][restore.y] = restore;
+      }
     }
      
     const numberPotions = RAWS.settings.base_spawn_rate * RAWS.entities.potion.spawnRate;
@@ -218,12 +248,20 @@ const GAME = {
           ...RAWS.entities.potion,
           ...this.getAcceptableCoordinateAsObject()
       }
-      
-      retMatrix[potion.x][potion.y] = potion;
+  
+      potion.render.color = this.dimension.potionColor;
+
+      if (retMatrix[potion.x][potion.y] !== null 
+      && retMatrix[potion.x][potion.y].id !== "door") {
+        retMatrix[potion.x][potion.y] = potion;
+      }
     }
   
     for (let i = 0; i < this.enemies.length; i++) {
-      retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
+      if (retMatrix[this.enemies[i].x][this.enemies[i].y] !== null 
+      && retMatrix[this.enemies[i].x][this.enemies[i].y].id !== "door") {
+        retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
+      }
     }    
    
     retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
@@ -381,7 +419,7 @@ const GAME = {
       VIEW.drawStatus("You died.");
     }
   
-    VIEW.refreshScreen(this.map,this.entityMatrix,this.player.get("x"),this.player.get("y"));
+    VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
 
   map: generateLevel(),
@@ -431,6 +469,7 @@ const GAME = {
   },
   
   pickupPotion: function () {
+    this.dimension.potionEffect();
   },
   
   pickupShard: function (entity) {
@@ -527,7 +566,8 @@ const GAME = {
     this.highScore = this.getHighScores(); 
     setInterval(
       VIEW.refreshScreen(
-        this.map, 
+        this.map,
+        this.dimension,
         this.entityMatrix, 
         this.player.get("x"), 
         this.player.get("y")

@@ -34,7 +34,8 @@ const RAWS = {
     "text": {
       "floor": "#",
       "wall": "-",
-      "exit": "x"
+      "exit": "x",
+      "door": " "
     }
   }, 
   "entities": {
@@ -130,6 +131,33 @@ const RAWS = {
         }
       },
       "spawnRate": .2
+    },
+    "door": {
+      "id": "door",
+      "spawnRate": .1 //spawn rate for each dimension's doors
+    }
+  },
+  "dimensions": {
+    "hp": {
+      "bgColor": "black",
+      "potionColor": "green",
+      "potionEffect": function() {
+        GAME.player.baseHpUp();
+      }
+    },
+    "atk": {
+      "bgColor": "red",
+      "potionColor": "red",
+      "potionEffect": function () {
+        GAME.player.atkUp();
+      }
+    },
+    "def": {
+      "bgColor": "blue",
+      "potionColor": "blue",
+      "potionEffect": function () {
+        GAME.player.defUp();
+      }
     }
   }
 }
