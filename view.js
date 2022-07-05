@@ -46,18 +46,18 @@ const VIEW = {
       return html;
   },
   
-  "refreshScreen": function (map, entities, x, y) {
+  "refreshScreen": function (map, dimension, entities, x, y) {
       if (this.rowVisible === -1 || this.colsVisible === -1) {
         this.setDisplaySize();
       };
-      this.drawMap(map, x, y);
+      this.drawMap(map, dimension, x, y);
       this.drawStats();
       this.draw(entities, x, y);
   },
   
-  "drawMap": function (map, x, y) {
+  "drawMap": function (map, dimension, x, y) {
       $("level").innerHTML = "";
-	let html = "";
+	let html = "<span style='color: " + RAWS.colors[dimension.bgColor] + ";'>";
   
       let rowz = (x - Math.floor(this.rowsVisible/2)) > 0 
       ? x-Math.floor(this.rowsVisible/2) : 0;
@@ -97,6 +97,8 @@ const VIEW = {
           
           html += "<br>";
   	}
+
+      html += "</span>";
       $("level").innerHTML = html;
   },
   
@@ -132,12 +134,19 @@ const VIEW = {
       if (endCol === COLS) { colz = COLS-this.colsVisible; }
  
       for (let row = rowz; row < endRow; row++) {
-          for (let col = colz; col < endCol; col++) {
-              if (entityMatrix[row] !== undefined
-              && entityMatrix[row][col] !== null) {
-                    html += "<span style='background-color: " + this.bodyBackground;
+        for (let col = colz; col < endCol; col++) {
+          if (entityMatrix[row] !== undefined
+          && entityMatrix[row][col] !== null) {
+            html += "<span style='background-color: ";
+            
+            if (entityMatrix[row][col].id === "door") {
+              html += RAWS.colors[RAWS.dimensions[entityMatrix[row][col]["dimension"]]["bgColor"]];
+            } else {
+              html += this.bodyBackground;
+            }
+
 		    if (entityMatrix[row][col].isPlayer === undefined) {
-                      html += "; color: " + entityMatrix[row][col].render.color + "'>";
+                      html += "; color: " + RAWS.colors[entityMatrix[row][col].render.color] + "'>";
                       html += entityMatrix[row][col].render.symbol;
                       html += "</span>";
                     } else {
@@ -158,19 +167,56 @@ const VIEW = {
   
   "drawStats": function () {
   
-      $("stats").innerHTML = "hp: " 
-          + this.damageSpan()
-  		+ GAME.player.get("hp")
-          + this.closeSpan()
-          + "/" + GAME.player.get("base_hp")
-          + " atk: "
-  		+ GAME.player.get("atk")
-          + " def: "
-  		+ GAME.player.get("def")
-          + " shards: "
+      let html =
+        "<span style='color: " 
+        + RAWS.colors[RAWS.dimensions.hp.bgColor] 
+        + ";'>_hp: ";
+
+      html += this.damageSpan();
+
+      for (let i = 0; i < GAME.player.get("hp"); i++) {
+        html += ".";
+      }
+
+      html += this.closeSpan();
+
+      html += "<span style='color: grey;'>";
+
+      const max = GAME.player.get("base_hp") - GAME.player.get("hp");
+
+      for (let i = 0; i < max; i++) {
+        html += ".";
+      }
+
+      html += "</span>";
+      html += "</span>";
+          
+      html += "<span style='color: " + RAWS.colors[RAWS.dimensions.atk.bgColor] + ";'>" 
+        + "<br>atk: ";
+  	  
+      for (let i = 0; i < GAME.player.get("atk"); i++) {
+          html += ".";
+      }
+      
+      html += "</span>";
+
+      html += "<span style='color: " + RAWS.colors[RAWS.dimensions.def.bgColor] + ";'>" 
+        + "<br>def: ";
+      
+      for (let i = 0; i < GAME.player.get("def"); i++) {
+          html += ".";
+      }
+      
+      html += "</span>";
+      html += "<span style='color: " + RAWS.entities.shard.render.color + ";'>";
+
+      html += "<br>shards: "
   		+ GAME.player.get("shards")
+        + "</span>"
           + " top: "
           + GAME.highscore;
+
+      $("stats").innerHTML = html;
   },
   "drawStatus": function (message) {
     $("status").innerHTML = message;

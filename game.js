@@ -1,11 +1,21 @@
 const GAME = {
 
+  doorsEntered: 0,
+
+  shardsCollectedOnLevel: 0,
+
+  potionsCollected: 0,
+
+  dimension: RAWS.dimensions.hp,
+
   playerAttack: function (defender) {
     if (defender.canFight()) {
+
+      const dimensionFactor = 1 + (this.doorsEntered * .1);
   
       let atkRoll = random(20);
    
-      let defenderHit = atkRoll > defender.def;
+      let defenderHit = atkRoll > (defender.def * dimensionFactor);
       if (defenderHit) {
         let dmgToDefender = Math.floor(this.player.get("atk")/2) 
         + random(Math.ceil(this.player.get("atk")/2));
@@ -24,7 +34,7 @@ const GAME = {
           }
     
           for (let i = 0; i < defender.shards; i++) {
-            this.player.picksUp(shard);     
+            this.player.picksUp("shard");     
           }
     
           return false;
@@ -38,13 +48,15 @@ const GAME = {
   },
 
   monsterAttack: function (attacker) {
-  
-    let atkRoll = random(20);
+ 
+    let dimensionFactor = 1 + (this.doorsEntered * .1); 
+    let atkRoll = random(20) * dimensionFactor;
  
     let defenderHit = atkRoll > this.player.get("def");
     if (defenderHit) {
-      let dmgToDefender = Math.floor(attacker.atk/2) 
-      + random(Math.ceil(attacker.atk/2));
+      let dmgToDefender = Math.floor(attacker.atk/2 
+      + random(attacker.atk/2)
+      * dimensionFactor);
       
       this.player.hpAdj(-dmgToDefender);
  
@@ -184,7 +196,7 @@ const GAME = {
 
   initializeEntityMatrix: function () {
     const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
-  
+
     const numberShards = RAWS.settings.base_spawn_rate 
     * RAWS.entities.shard.spawnRate;
    
@@ -193,8 +205,8 @@ const GAME = {
           ...new Entity(),
           ...RAWS.entities.shard,
           ...this.getAcceptableCoordinateAsObject()
-      }
-  
+      };
+ 
       retMatrix[shard.x][shard.y] = shard;
     }
     
@@ -211,14 +223,14 @@ const GAME = {
       retMatrix[restore.x][restore.y] = restore;
     }
      
-    const numberPotions = RAWS.settings.base_spawn_rate * RAWS.entities.potion.spawnRate;
-    for (let i = 0; i < numberPotions; i++) {
+    for (let i = 0; i < RAWS.settings.potions_per_level; i++) {
       const potion = {
           ...new Entity(),
           ...RAWS.entities.potion,
           ...this.getAcceptableCoordinateAsObject()
       }
-      
+      const dimColor = this.dimension.potionColor;
+      potion.render.color = dimColor;
       retMatrix[potion.x][potion.y] = potion;
     }
   
@@ -227,6 +239,7 @@ const GAME = {
     }    
    
     retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
+    
   
     return retMatrix;
   },
@@ -271,7 +284,6 @@ const GAME = {
         score += highscoresString[idx];
         idx++;
       }
-
       return parseInt(score);
     } else {
       return 0;
@@ -354,7 +366,23 @@ const GAME = {
       this.pickupBuff();
       this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
     }
-  
+ 
+    if (this.entityMatrix[proposedPlayerX][proposedPlayerY] !== null
+    && this.entityMatrix[proposedPlayerX][proposedPlayerY].id === "door") {
+      //update dimension
+      this.dimension = RAWS.dimensions[this.entityMatrix[proposedPlayerX][proposedPlayerY].dimension];
+      this.doorsEntered++;
+      this.potionsCollected = 0;
+      this.doorsNotAppeared = true;
+      this.shardsCollectedOnLevel = 0;
+      //re-initialize entityMatrix
+      this.map = generateLevel();
+      this.enemies = this.populateEnemies();
+      this.entityMatrix = this.initializeEntityMatrix();
+      //skip rest of loop
+      moveDownStairs = true;
+    }
+ 
     if (!monsterPresent && !moveDownStairs 
     && this.map[proposedPlayerX][proposedPlayerY] !== RAWS.map.text.wall) {
       this.movePlayerTo(proposedPlayerX,proposedPlayerY);
@@ -368,7 +396,8 @@ const GAME = {
       && Math.abs(this.player.get("y") - this.enemies[i].y) < 2) {
         this.monsterAttack(this.enemies[i]);
       } else {
-        if (this.enemies[i].id === "maxion" || random(20) > 1) {
+        if ((this.enemies[i].id === "maxion" || random(20) > 1)
+        && this.monsterOnScreen(i)) {
           this.enemyMoves(i);
         }	
       }	
@@ -378,22 +407,71 @@ const GAME = {
     if (this.player.get("hp") < 1) {
       this.player.hpAdj(Math.abs(this.player.get("hp")));
       this.play = false;
-      VIEW.drawStatus("You died.");
     }
-  
-    VIEW.refreshScreen(this.map,this.entityMatrix,this.player.get("x"),this.player.get("y"));
+ 
+    if (this.shardsCollectedOnLevel === 20
+    && this.doorsNotAppeared) {
+        this.appearDoors();
+        VIEW.drawStatus("The shards have opened doors to other dimensions!");
+    }
+    VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
+
+  appearDoors: function () {
+    for (dimension in RAWS.dimensions) {
+      if (RAWS.dimensions[dimension] !== this.dimension) {
+        const numberDoors = RAWS.settings.base_spawn_rate
+        * RAWS.entities.door.spawnRate;
+          
+        for (let i = 0; i < numberDoors; i++) {
+          let door = {
+            ...new Entity(),
+            ...RAWS.entities.door,
+            ...this.getAcceptableCoordinateAsObject()
+          };
+  
+          door.dimension = dimension;
+          door.render = {
+              color: RAWS.dimensions[dimension]["bgColor"],
+              symbol: "O"
+          };
+
+          if (door.x !== this.player.get("x") && door.y !== this.player.get("y")) {
+            this.entityMatrix[door.x][door.y] = door;
+          }  
+        } 
+      }
+    }
+    this.doorsNotAppeared = false;
+  },
+
+  doorsNotAppeared: true,
 
   map: generateLevel(),
 
+  monsterOnScreen: function (i) {
+    if ((this.enemies[i].x > (this.player.get("x") - (VIEW.rowsVisible/2))
+      && this.enemies[i].x < (this.player.get("x") + (VIEW.rowsVisible/2)))
+    && (this.enemies[i].y > (this.player.get("y") - (VIEW.colsVisible/2))
+      && this.enemies[i].y < (this.player.get("y") + (VIEW.colsVisible/2)))) { 
+      return true;
+    }
+
+    return false;
+  },
+
   maybeUpdateHighScores: function () {
-    if (this.highscore < this.player.shards) {
-      this.highscore = this.player.shards;
+    if (this.highscore < this.player.get("shards")) {
+      this.highscore = this.player.get("shards");
       this.isNewHighScore = true;
     }
-    
-    document.cookie = "highscores=" + this.highscore 
+    console.log(document.cookie);    
+    document.cookie = 
+      "highscores=" 
+      + this.highscore 
       + "; SameSite=Strict;";
+
+    console.log(document.cookie);
   },
 
   movePlayerTo: function (x,y) {
@@ -405,7 +483,8 @@ const GAME = {
   moveEnemyTo: function (idx,x,y) {
     if (this.enemies[idx].x > 0 && this.enemies[idx].y > 0 
     && this.map[x][y] === RAWS.map.text.floor 
-    && this.entityMatrix[x][y] === null) {
+    && (this.entityMatrix[x][y] === null 
+        || this.entityMatrix[x][y].id === "shard")) {
       this.entityMatrix[this.enemies[idx].x][this.enemies[idx].y] = null;
 	  if (this.checkForShards(x,y)) {
 	    this.enemies[idx].shards++;
@@ -431,10 +510,18 @@ const GAME = {
   },
   
   pickupPotion: function () {
+    this.potionsCollected++;
+    this.dimension.potionEffect();
+    if (this.potionsCollected === RAWS.settings.potions_per_level) {
+        VIEW.drawStatus("There are no more potions... in this realm.");
+    }
   },
   
   pickupShard: function (entity) {
     entity.picksUp("shards");
+    if (entity.isPlayer) {
+      this.shardsCollectedOnLevel++;
+    }
   },
    
   play: true,
@@ -510,7 +597,19 @@ const GAME = {
       }
     }
   },
-  
+    startView: function () {
+      setInterval(
+      VIEW.refreshScreen(
+        this.map,
+        this.dimension,
+        this.entityMatrix, 
+        this.player.get("x"), 
+        this.player.get("y")
+      ), 
+      (1000 / RAWS.settings.fps));
+    
+
+    },
   start: async function () {
 
     //TODO: add this back in after new VIEW is complete
@@ -524,16 +623,9 @@ const GAME = {
     this.player.updateCoords(startingCoords.x, startingCoords.y); 
     this.enemies = this.populateEnemies();
     this.entityMatrix = this.initializeEntityMatrix();
-    this.highScore = this.getHighScores(); 
-    setInterval(
-      VIEW.refreshScreen(
-        this.map, 
-        this.entityMatrix, 
-        this.player.get("x"), 
-        this.player.get("y")
-      ), 
-      (1000 / RAWS.settings.fps));
-    
+    this.highscore = this.getHighScores(); 
+    this.startView();
+
     while (this.play) {
       await CONTROLLER.waitingKeypress();
     
@@ -543,10 +635,14 @@ const GAME = {
     }
     
     this.maybeUpdateHighScores();
-      
+    
+    const endString = "You died. ";
+
     if (this.isNewHighScore) {
-      VIEW.drawStatus("New high score!");
+      endString += "New high score though!";
     }
+      
+    VIEW.drawStatus(endString);
     
     clearInterval();
   },

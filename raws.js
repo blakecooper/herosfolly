@@ -1,5 +1,18 @@
 const RAWS = {
+    //TODO: refine this process!
+  "colors": {
+    "RED": "#A00000",
+    "LIGHTRED": "#F30000",
+    "GREEN": "#00B100",
+    "LIGHTGREEN": "#08FF00",
+    "BLUE": "#115FF0",
+    "LIGHTBLUE": "#0A98DD",
+    "YELLOW": "yellow",
+    "ORANGE": "brown",
+    "WHITE": "white"
+  },
   "settings": {
+    "potions_per_level": 20,
     "default_font_size": 1.5,
     "base_spawn_rate": 500,
     "keymap": {
@@ -34,7 +47,8 @@ const RAWS = {
     "text": {
       "floor": "#",
       "wall": "-",
-      "exit": "x"
+      "exit": "x",
+      "door": "O"
     }
   }, 
   "entities": {
@@ -73,9 +87,9 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "m",
-        "color": "red"
+        "color": "ORANGE" 
       },
-      "spawnRate": 1,
+      "spawnRate": .5,
 	"isMonstrous": true
     },
     "maxion": {
@@ -87,9 +101,9 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "M",
-        "color": "red"
+        "color": "ORANGE"
       },
-      "spawnRate": .2,
+      "spawnRate": .1,
       "isMonstrous": true
     },
     "potion": {
@@ -103,13 +117,13 @@ const RAWS = {
             consumer.hp++;
         }
       },
-      "spawnRate": .2
+      "spawnRate": .1
     },
     "shard": {
       "id": "shard",
       "render": {
         "symbol": "*",
-        "color": "yellow"
+        "color": "YELLOW"
       },
       "onConsume": function (consumer) {
         if (consumer.holdsShards()) {
@@ -121,15 +135,42 @@ const RAWS = {
     "restore": {
       "id": "restore",
       "render": {
-        "symbol": "%",
-        "color": "green"
+        "symbol": ".",
+        "color": "GREEN"
       },
       "onConsume": function (consumer) {
         if (consumer.canFight()) {
           consumer.hp = consumer.base_hp;
         }
       },
-      "spawnRate": .2
+      "spawnRate": .1
+    },
+    "door": {
+      "id": "door",
+      "spawnRate": .1 //spawn rate for each dimension's doors
+    }
+  },
+  "dimensions": {
+    "hp": {
+      "bgColor": "GREEN",
+      "potionColor": "LIGHTGREEN",
+      "potionEffect": function() {
+        GAME.player.baseHpUp();
+      }
+    },
+    "atk": {
+      "bgColor": "RED",
+      "potionColor": "LIGHTRED",
+      "potionEffect": function () {
+        GAME.player.atkUp();
+      }
+    },
+    "def": {
+      "bgColor": "BLUE",
+      "potionColor": "LIGHTBLUE",
+      "potionEffect": function () {
+        GAME.player.defUp();
+      }
     }
   }
 }
