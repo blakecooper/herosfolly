@@ -1,4 +1,5 @@
 const RAWS = {
+    //TODO: refine this process!
   "colors": {
     "RED": "#A00000",
     "LIGHTRED": "#F30000",
@@ -7,9 +8,11 @@ const RAWS = {
     "BLUE": "#115FF0",
     "LIGHTBLUE": "#0A98DD",
     "YELLOW": "yellow",
+    "ORANGE": "brown",
     "WHITE": "white"
   },
   "settings": {
+    "potions_per_level": 20,
     "default_font_size": 1.5,
     "base_spawn_rate": 500,
     "keymap": {
@@ -84,7 +87,7 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "m",
-        "color": "RED"
+        "color": "ORANGE" 
       },
       "spawnRate": .5,
 	"isMonstrous": true
@@ -98,7 +101,7 @@ const RAWS = {
       "shards": 0,
       "render": {
         "symbol": "M",
-        "color": "RED"
+        "color": "ORANGE"
       },
       "spawnRate": .1,
       "isMonstrous": true
@@ -114,7 +117,7 @@ const RAWS = {
             consumer.hp++;
         }
       },
-      "spawnRate": .2
+      "spawnRate": .1
     },
     "shard": {
       "id": "shard",
@@ -132,7 +135,7 @@ const RAWS = {
     "restore": {
       "id": "restore",
       "render": {
-        "symbol": "%",
+        "symbol": ".",
         "color": "GREEN"
       },
       "onConsume": function (consumer) {
@@ -140,7 +143,7 @@ const RAWS = {
           consumer.hp = consumer.base_hp;
         }
       },
-      "spawnRate": .2
+      "spawnRate": .1
     },
     "door": {
       "id": "door",

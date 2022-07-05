@@ -167,23 +167,56 @@ const VIEW = {
   
   "drawStats": function () {
   
-      $("stats").innerHTML = "<span style='color: " + RAWS.colors[RAWS.dimensions.hp.bgColor] + ";'>hp: " 
-          + this.damageSpan()
-  		+ GAME.player.get("hp")
-          + this.closeSpan()
-          + "/" + GAME.player.get("base_hp") + "</span>"
-        + "<span style='color: " + RAWS.colors[RAWS.dimensions.atk.bgColor] + ";'>" 
-          + " atk: "
-  		+ GAME.player.get("atk")
-        + "</span>"
-        + "<span style='color: " + RAWS.colors[RAWS.dimensions.def.bgColor] + ";'>" 
-          + " def: "
-  		+ GAME.player.get("def")
-        + "</span>"  
-          + " shards: "
+      let html =
+        "<span style='color: " 
+        + RAWS.colors[RAWS.dimensions.hp.bgColor] 
+        + ";'>_hp: ";
+
+      html += this.damageSpan();
+
+      for (let i = 0; i < GAME.player.get("hp"); i++) {
+        html += ".";
+      }
+
+      html += this.closeSpan();
+
+      html += "<span style='color: grey;'>";
+
+      const max = GAME.player.get("base_hp") - GAME.player.get("hp");
+
+      for (let i = 0; i < max; i++) {
+        html += ".";
+      }
+
+      html += "</span>";
+      html += "</span>";
+          
+      html += "<span style='color: " + RAWS.colors[RAWS.dimensions.atk.bgColor] + ";'>" 
+        + "<br>atk: ";
+  	  
+      for (let i = 0; i < GAME.player.get("atk"); i++) {
+          html += ".";
+      }
+      
+      html += "</span>";
+
+      html += "<span style='color: " + RAWS.colors[RAWS.dimensions.def.bgColor] + ";'>" 
+        + "<br>def: ";
+      
+      for (let i = 0; i < GAME.player.get("def"); i++) {
+          html += ".";
+      }
+      
+      html += "</span>";
+      html += "<span style='color: " + RAWS.entities.shard.render.color + ";'>";
+
+      html += "<br>shards: "
   		+ GAME.player.get("shards")
+        + "</span>"
           + " top: "
           + GAME.highscore;
+
+      $("stats").innerHTML = html;
   },
   "drawStatus": function (message) {
     $("status").innerHTML = message;
