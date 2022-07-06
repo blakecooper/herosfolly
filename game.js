@@ -208,7 +208,8 @@ const GAME = {
     let zoneHeight = Math.ceil(RAWS.settings.rows / 2);
     let potionsToGenerate = RAWS.settings.potions_per_level;
 
-    let voronoiList = [];
+    let voronoiSites = [];
+    let zoneParams = [];
 
     for (let row = 0; row < 2; row++) {
       for (let col = 0; col < mapZoneCols; col++) {
@@ -227,7 +228,13 @@ const GAME = {
           potion.render.color = dimColor;
           retMatrix[potion.x][potion.y] = potion;
           
-          voronoiList.push({x: potion.y, y: potion.x});
+          voronoiSites.push({x: potion.y, y: potion.x});
+          zoneParams.push({
+            x1: (zoneWidth * col),
+            x2: ((zoneWidth * col) + zoneWidth),
+            y1: (zoneHeight * row),
+            y2: ((zoneHeight * row) + zoneHeight)
+  	  });
         }
       }
     }
@@ -235,19 +242,39 @@ const GAME = {
     let voronoi = new Voronoi();
     let bbox = { x1: 0, xr: RAWS.settings.COLS, yt: 0, rb: RAWS.settings.ROWS };
 
-    const numberShards = RAWS.settings.base_spawn_rate 
-    * RAWS.entities.shard.spawnRate;
+    let diagram = voronoi.compute(voronoiSites, bbox);
+
+    for (let site = 0; site < voronoiSites.length; site++) {
+      //spawn an item in that range
+      const numberShards = (RAWS.settings.base_spawn_rate 
+      * RAWS.entities.shard.spawnRate) / voronoiSites.length;
+     
+      for (let i = 0; i < numberShards; i++) {
+        const shard = {
+            ...new Entity(),
+            ...RAWS.entities.shard,
+            ...this.getAcceptableCoordinateAsObject(
+	      zoneParams[site].x1, 
+	      zoneParams[site].x2, 
+	      zoneParams[site].y1, 
+	      zoneParams[site].y2, 
+  	    )
+        };
    
-    for (let i = 0; i < numberShards; i++) {
-      const shard = {
-          ...new Entity(),
-          ...RAWS.entities.shard,
-          ...this.getAcceptableCoordinateAsObject()
-      };
- 
-      retMatrix[shard.x][shard.y] = shard;
+        if (isInVoronoiCell(
+          shard.y, 
+ 	  shard.x, 
+ 	  voronoiSites[site].x, 
+	  voronoiSites[site].y, 
+	  diagram
+        )) {
+          if (retMatrix[shard.x][shard.y] === null
+          || retMatrix[shard.x][shard.y].is !== "potion"){
+            retMatrix[shard.x][shard.y] = shard;
+          }
+        } 
+      }
     }
-    
     const numberRestore = RAWS.settings.base_spawn_rate
     * RAWS.entities.restore.spawnRate;
   
