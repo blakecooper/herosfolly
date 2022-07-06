@@ -18,3 +18,18 @@ function getListOfEntitiesWhere(property, value) {
     }
     return retVal;
 }
+
+function initializeMatrix(rows, cols, character) {
+    let matrix = [];
+
+    for (let row = 0; row < rows; row++) {
+        matrix.push([]);
+        
+        for (let col = 0; col < cols; col++) {
+            matrix[row].push(character);
+        }
+    }
+
+    return matrix;
+}
+

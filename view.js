@@ -71,19 +71,19 @@ const VIEW = {
       if (rowz === 0) { 
           endRow = this.rowsVisible; 
       } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < ROWS 
-          ? x+Math.ceil(this.rowsVisible/2) :  ROWS;
+          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+          ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
       }
       
       if (colz === 0) { 
           endCol = this.colsVisible; 
       } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < COLS 
-          ? y+Math.ceil(this.colsVisible/2) : COLS;
+          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+          ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-      if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
-      if (endCol === COLS) { colz = COLS-this.colsVisible; }
+      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
+      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
       
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
@@ -119,19 +119,19 @@ const VIEW = {
       if (rowz === 0) { 
           endRow = this.rowsVisible; 
       } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < ROWS 
-          ? x+Math.ceil(this.rowsVisible/2) :  ROWS;
+          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+          ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
       }
       
       if (colz === 0) { 
           endCol = this.colsVisible; 
       } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < COLS 
-          ? y+Math.ceil(this.colsVisible/2) : COLS;
+          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+          ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-      if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
-      if (endCol === COLS) { colz = COLS-this.colsVisible; }
+      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
+      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
  
       for (let row = rowz; row < endRow; row++) {
         for (let col = colz; col < endCol; col++) {
@@ -265,9 +265,9 @@ const VIEW = {
   
   let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
   let systemFontSize = parseFloat(style);
-  		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
+  		let statsStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer) + "px;";
   		$("stats").style = statsStyleUpdate;
-  		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
+  		let statusStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer + 35) + "px;"; 
   		$("status").style = statusStyleUpdate;
   },
 

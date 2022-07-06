@@ -71,10 +71,10 @@ const GAME = {
   },
   
   avoidEdges: function (axis, value) {
-    let mapDimension = ROWS - 1;
+    let mapDimension = RAWS.settings.rows - 1;
   
-    if (axis === COLS) {
-      mapDimension = COLS - 1;
+    if (axis === RAWS.settings.cols) {
+      mapDimension = RAWS.settings.cols - 1;
     }
   	
     if (value == 0) { 
@@ -197,6 +197,44 @@ const GAME = {
   initializeEntityMatrix: function () {
     const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
 
+    //Spawn potions first
+    //split map into sections based on how many potions
+    let numberMapZones = RAWS.settings.potions_per_level;
+
+    if (numberMapZones % 2 !== 0) { numberMapZones++; }
+    
+    let mapZoneCols = Math.ceil(numberMapZones / 2);
+    let zoneWidth = Math.ceil(RAWS.settings.cols / mapZoneCols);
+    let zoneHeight = Math.ceil(RAWS.settings.rows / 2);
+    let potionsToGenerate = RAWS.settings.potions_per_level;
+
+    let voronoiList = [];
+
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < mapZoneCols; col++) {
+        if (potionsToGenerate > 0) {
+          const potion = {
+              ...new Entity(),
+              ...RAWS.entities.potion,
+              ...this.getAcceptableCoordinateAsObject(
+                (zoneWidth * col),
+                ((zoneWidth * col) + zoneWidth),
+                (zoneHeight * row),
+                ((zoneHeight * row) + zoneHeight)
+              )
+          }
+          const dimColor = this.dimension.potionColor;
+          potion.render.color = dimColor;
+          retMatrix[potion.x][potion.y] = potion;
+          
+          voronoiList.push({x: potion.y, y: potion.x});
+        }
+      }
+    }
+
+    let voronoi = new Voronoi();
+    let bbox = { x1: 0, xr: RAWS.settings.COLS, yt: 0, rb: RAWS.settings.ROWS };
+
     const numberShards = RAWS.settings.base_spawn_rate 
     * RAWS.entities.shard.spawnRate;
    
@@ -223,17 +261,6 @@ const GAME = {
       retMatrix[restore.x][restore.y] = restore;
     }
      
-    for (let i = 0; i < RAWS.settings.potions_per_level; i++) {
-      const potion = {
-          ...new Entity(),
-          ...RAWS.entities.potion,
-          ...this.getAcceptableCoordinateAsObject()
-      }
-      const dimColor = this.dimension.potionColor;
-      potion.render.color = dimColor;
-      retMatrix[potion.x][potion.y] = potion;
-    }
-  
     for (let i = 0; i < this.enemies.length; i++) {
       retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
     }    
@@ -243,14 +270,14 @@ const GAME = {
   
     return retMatrix;
   },
- 
-  getAcceptableCoordinateAsObject: function () {
+
+  getAcceptableCoordinateAsObjectWithParams: function (x1, x2, y1, y2) {
     let acceptable = false;
     const coordsArr = [-1, -1];
 
     while (!acceptable) {
-      coordsArr[0] = this.getRandomCoordinate(this.map.length);
-      coordsArr[1] = this.getRandomCoordinate(this.map[0].length);
+      coordsArr[0] = this.getRandomCoordinate(x2-x1)+x1;
+      coordsArr[1] = this.getRandomCoordinate(y2-y1)+y1;
 
       if (this.map[coordsArr[0]][coordsArr[1]] === RAWS.map.text.floor) {
         acceptable = true;
@@ -261,6 +288,11 @@ const GAME = {
       x: coordsArr[0],
       y: coordsArr[1]
     };
+    
+  },
+
+  getAcceptableCoordinateAsObject: function () {
+    return this.getAcceptableCoordinateAsObjectWithParams(0, this.map.length, 0, this.map[0].length);
   },
   
   getEnemyAt: function (x,y) {
@@ -291,10 +323,10 @@ const GAME = {
   },
 
   getRandomCoordinate: function (axis) {
-    let mapLimit = ROWS;
+    let mapLimit = RAWS.settings.rows;
 
-    if  (axis === COLS) {
-     mapLimit = COLS;
+    if  (axis === RAWS.settings.cols) {
+     mapLimit = RAWS.settings.cols;
     }
     return this.avoidEdges(axis, random(mapLimit-1));
   },
@@ -376,7 +408,7 @@ const GAME = {
       this.doorsNotAppeared = true;
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
-      this.map = generateLevel();
+      this.map = LEVEL.generate();
       this.enemies = this.populateEnemies();
       this.entityMatrix = this.initializeEntityMatrix();
       //skip rest of loop
@@ -447,7 +479,7 @@ const GAME = {
 
   doorsNotAppeared: true,
 
-  map: generateLevel(),
+  map: LEVEL.generate(),
 
   monsterOnScreen: function (i) {
     if ((this.enemies[i].x > (this.player.get("x") - (VIEW.rowsVisible/2))
@@ -582,8 +614,8 @@ const GAME = {
     let acceptablePlacement = false;
   
     while (!acceptablePlacement) {
-      let x = getRandomCoordinate(ROWS);
-      let y = getRandomCoordinate(COLS);
+      let x = getRandomCoordinate(RAWS.settings.rows);
+      let y = getRandomCoordinate(RAWS.settings.cols);
   
       if (this.map[x][y] === RAWS.map.text.floor 
       && noEntitiesOnSquare(x, y)) {
@@ -615,7 +647,7 @@ const GAME = {
     //TODO: add this back in after new VIEW is complete
     //checkForMobileDevice();
 
-    this.map = generateLevel(); 
+    this.map = LEVEL.generate(); 
     this.player = this.initializePlayer;
 
     const startingCoords = this.getAcceptableCoordinateAsObject();

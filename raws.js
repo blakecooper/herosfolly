@@ -12,6 +12,10 @@ const RAWS = {
     "WHITE": "white"
   },
   "settings": {
+    "min_room_size": 3,
+    "max_room_size": 12,
+    "rows":  128,
+    "cols": 320,
     "potions_per_level": 20,
     "default_font_size": 1.5,
     "base_spawn_rate": 500,
@@ -130,7 +134,7 @@ const RAWS = {
           consumer.shards++;
         }
       },
-      "spawnRate": 2
+      "spawnRate": .5
     },
     "restore": {
       "id": "restore",
