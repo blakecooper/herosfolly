@@ -203,14 +203,14 @@ const GAME = {
 
     if (numberMapZones % 2 !== 0) { numberMapZones++; }
     
-    let mapZoneCols = Math.ceil(numberMapZones / 2);
-    let zoneWidth = Math.ceil(RAWS.settings.cols / mapZoneCols);
-    let zoneHeight = Math.ceil(RAWS.settings.rows / 2);
+    let mapZoneCols = Math.floor(numberMapZones / 2);
+    let zoneWidth = Math.floor(RAWS.settings.cols / mapZoneCols);
+    let zoneHeight = Math.floor(RAWS.settings.rows / 2);
     let potionsToGenerate = RAWS.settings.potions_per_level;
 
     let voronoiSites = [];
     let zoneParams = [];
-
+    
     for (let row = 0; row < 2; row++) {
       for (let col = 0; col < mapZoneCols; col++) {
         if (potionsToGenerate > 0) {
@@ -218,10 +218,10 @@ const GAME = {
               ...new Entity(),
               ...RAWS.entities.potion,
               ...this.getAcceptableCoordinateAsObject(
-                (zoneWidth * col),
-                ((zoneWidth * col) + zoneWidth),
                 (zoneHeight * row),
-                ((zoneHeight * row) + zoneHeight)
+                ((zoneHeight * row) + zoneHeight -1),
+                (zoneWidth * col),
+                ((zoneWidth * col) + zoneWidth -1)
               )
           }
           const dimColor = this.dimension.potionColor;
@@ -230,20 +230,58 @@ const GAME = {
           
           voronoiSites.push({x: potion.y, y: potion.x});
           zoneParams.push({
-            x1: (zoneWidth * col),
-            x2: ((zoneWidth * col) + zoneWidth),
-            y1: (zoneHeight * row),
-            y2: ((zoneHeight * row) + zoneHeight)
+            x1: (zoneWidth * row),
+            x2: ((zoneWidth * row) + zoneHeight),
+            y1: (zoneHeight * col),
+            y2: ((zoneHeight * col) + zoneWidth)
   	  });
         }
       }
     }
 
     let voronoi = new Voronoi();
-    let bbox = { x1: 0, xr: RAWS.settings.COLS, yt: 0, rb: RAWS.settings.ROWS };
+    let bbox = { x1: 0, xr: RAWS.settings.cols, yt: 0, rb: RAWS.settings.rows };
 
     let diagram = voronoi.compute(voronoiSites, bbox);
+    console.log(diagram);
+    
+    let hiveMap = initializeMatrix(this.map.length,this.map[0].length,"&nbsp");
 
+    for (let edge = 0; edge < diagram.edges.length; edge++) {
+        if (!Number.isNaN(Math.floor(diagram.edges[edge].va.x))
+           &&!Number.isNaN(Math.floor(diagram.edges[edge].va.y))
+           &&!Number.isNaN(Math.floor(diagram.edges[edge].vb.x))
+           &&!Number.isNaN(Math.floor(diagram.edges[edge].vb.y))) {
+
+        
+        if (Math.floor(diagram.edges[edge].va.x < 0)) {
+            diagram.edges[edge].va.x = 0;
+        }
+
+        if (Math.floor(diagram.edges[edge].va.y < 0)) {
+            diagram.edges[edge].va.y = 0;
+        }
+        if (Math.floor(diagram.edges[edge].vb.x < 0)) {
+            diagram.edges[edge].vb.x = 0;
+        }
+        if (Math.floor(diagram.edges[edge].vb.y < 0)) {
+            diagram.edges[edge].vb.y = 0;
+        }
+        console.log("va: x: " + Math.floor(diagram.edges[edge].va.x) + ", y: " + Math.floor(diagram.edges[edge].va.y));
+        console.log("vb: x: " + Math.floor(diagram.edges[edge].vb.x) + ", y: " + Math.floor(diagram.edges[edge].vb.y));
+      hiveMap[Math.floor(diagram.edges[edge].va.x)][Math.floor(diagram.edges[edge].va.y)] = "E";
+      hiveMap[Math.floor(diagram.edges[edge].vb.x)][Math.floor(diagram.edges[edge].vb.y)] = "E";
+           }
+    }
+    console.log("hive array: " + hiveMap);
+    let html = "";
+    for (let row = 0; row < hiveMap.length; row++) {
+        for (let col = 0; col < hiveMap[0].length; col++) {
+            html += hiveMap[row][col];
+        }
+    }
+      console.log("hive html: " + html);
+    $("hive").innerHTML = html;
     for (let site = 0; site < voronoiSites.length; site++) {
       //spawn an item in that range
       const numberShards = (RAWS.settings.base_spawn_rate 

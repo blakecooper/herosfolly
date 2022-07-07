@@ -4,7 +4,7 @@ const VIEW = {
   "buffer": 125,
 
   "clearStatus": function () {
-    $("status").innerHTML = "";
+      $("status1").style = "color: grey;";
   },
 
   "checkForMobileDevice": function () {
@@ -218,9 +218,20 @@ const VIEW = {
 
       $("stats").innerHTML = html;
   },
+    "statusList": ["","","",""],
+
   "drawStatus": function (message) {
-    $("status").innerHTML = message;
-    let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
+ 
+    this.statusList.push(message);
+
+    $("status1").style = "color: white;";
+    $("status1").innerHTML = this.statusList[this.statusList.length-1];
+    $("status2").innerHTML = this.statusList[this.statusList.length-2];
+    $("status3").innerHTML = this.statusList[this.statusList.length-3];
+    $("status4").innerHTML = this.statusList[this.statusList.length-4];
+  
+  //change this to a function that greys out instead of removes the new message
+      let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
   },
  
   "rowsVisible": -1,
