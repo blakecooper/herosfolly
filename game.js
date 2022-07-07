@@ -1,4 +1,5 @@
 const GAME = {
+  acceptableLoopTimeout: 0,
 
   doorsEntered: 0,
 
@@ -217,33 +218,35 @@ const GAME = {
           const potion = {
               ...new Entity(),
               ...RAWS.entities.potion,
-              ...this.getAcceptableCoordinateAsObject(
+              ...this.getAcceptableCoordinateAsObjectWithParams(
                 (zoneHeight * row),
-                ((zoneHeight * row) + zoneHeight -1),
+                ((zoneHeight * row) + (zoneHeight-1)),
                 (zoneWidth * col),
-                ((zoneWidth * col) + zoneWidth -1)
+                ((zoneWidth * col) + (zoneWidth-1))
               )
           }
           const dimColor = this.dimension.potionColor;
           potion.render.color = dimColor;
           retMatrix[potion.x][potion.y] = potion;
           
-          voronoiSites.push({x: potion.y, y: potion.x});
+          voronoiSites.push({x: potion.x, y: potion.y});
           zoneParams.push({
             x1: (zoneWidth * row),
-            x2: ((zoneWidth * row) + zoneHeight),
+            x2: ((zoneWidth * row) + (zoneHeight-1)),
             y1: (zoneHeight * col),
-            y2: ((zoneHeight * col) + zoneWidth)
+            y2: ((zoneHeight * col) + (zoneWidth-1))
   	  });
         }
       }
     }
 
+    console.log(voronoiSites);
+    console.log(zoneParams);
+
     let voronoi = new Voronoi();
-    let bbox = { x1: 0, xr: RAWS.settings.cols, yt: 0, rb: RAWS.settings.rows };
+    let bbox = { x1: 0, xr: RAWS.settings.rows-1, yt: 0, rb: RAWS.settings.cols-1 };
 
     let diagram = voronoi.compute(voronoiSites, bbox);
-    console.log(diagram);
     
     let hiveMap = initializeMatrix(this.map.length,this.map[0].length,"&nbsp");
 
@@ -267,31 +270,26 @@ const GAME = {
         if (Math.floor(diagram.edges[edge].vb.y < 0)) {
             diagram.edges[edge].vb.y = 0;
         }
-        console.log("va: x: " + Math.floor(diagram.edges[edge].va.x) + ", y: " + Math.floor(diagram.edges[edge].va.y));
-        console.log("vb: x: " + Math.floor(diagram.edges[edge].vb.x) + ", y: " + Math.floor(diagram.edges[edge].vb.y));
       hiveMap[Math.floor(diagram.edges[edge].va.x)][Math.floor(diagram.edges[edge].va.y)] = "E";
       hiveMap[Math.floor(diagram.edges[edge].vb.x)][Math.floor(diagram.edges[edge].vb.y)] = "E";
            }
     }
-    console.log("hive array: " + hiveMap);
     let html = "";
     for (let row = 0; row < hiveMap.length; row++) {
         for (let col = 0; col < hiveMap[0].length; col++) {
             html += hiveMap[row][col];
         }
     }
-      console.log("hive html: " + html);
     $("hive").innerHTML = html;
     for (let site = 0; site < voronoiSites.length; site++) {
       //spawn an item in that range
       const numberShards = (RAWS.settings.base_spawn_rate 
       * RAWS.entities.shard.spawnRate) / voronoiSites.length;
-     
       for (let i = 0; i < numberShards; i++) {
         const shard = {
             ...new Entity(),
             ...RAWS.entities.shard,
-            ...this.getAcceptableCoordinateAsObject(
+            ...this.getAcceptableCoordinateAsObjectWithParams(
 	      zoneParams[site].x1, 
 	      zoneParams[site].x2, 
 	      zoneParams[site].y1, 
@@ -300,8 +298,8 @@ const GAME = {
         };
    
         if (isInVoronoiCell(
-          shard.y, 
- 	  shard.x, 
+          shard.x, 
+ 	  shard.y, 
  	  voronoiSites[site].x, 
 	  voronoiSites[site].y, 
 	  diagram
@@ -338,14 +336,18 @@ const GAME = {
 
   getAcceptableCoordinateAsObjectWithParams: function (x1, x2, y1, y2) {
     let acceptable = false;
+    this.acceptableTimeout = 0;
     const coordsArr = [-1, -1];
 
     while (!acceptable) {
-      coordsArr[0] = this.getRandomCoordinate(x2-x1)+x1;
-      coordsArr[1] = this.getRandomCoordinate(y2-y1)+y1;
+      coordsArr[0] = this.getRandomCoordinateWithParams(CONSTS.ROW, x2-x1)+x1;
+      coordsArr[1] = this.getRandomCoordinateWithParams(CONSTS.COL, y2-y1)+y1;
 
       if (this.map[coordsArr[0]][coordsArr[1]] === RAWS.map.text.floor) {
         acceptable = true;
+      } else {
+        this.acceptableTimeout++;
+        if (this.acceptableTimeout > 100) {break;}
       }
     }
     
@@ -387,10 +389,20 @@ const GAME = {
     }
   },
 
+  getRandomCoordinateWithParams: function(axis, limit) {
+    let mapLimit = RAWS.settings.rows;
+
+    if (axis === CONSTS.COL) {
+      mapLimit = RAWS.settings.cols;
+    }
+
+    return this.avoidEdges(axis, random(limit));
+  }, 
+
   getRandomCoordinate: function (axis) {
     let mapLimit = RAWS.settings.rows;
 
-    if  (axis === RAWS.settings.cols) {
+    if  (axis === CONSTS.COL) {
      mapLimit = RAWS.settings.cols;
     }
     return this.avoidEdges(axis, random(mapLimit-1));
@@ -562,13 +574,11 @@ const GAME = {
       this.highscore = this.player.get("shards");
       this.isNewHighScore = true;
     }
-    console.log(document.cookie);    
     document.cookie = 
       "highscores=" 
       + this.highscore 
       + "; SameSite=Strict;";
 
-    console.log(document.cookie);
   },
 
   movePlayerTo: function (x,y) {

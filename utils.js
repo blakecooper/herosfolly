@@ -69,15 +69,23 @@ function isInVoronoiCell(x, y, siteX, siteY, voronoi) {
   console.log("shard location: " + x + ", " + y);
   console.log("edge endpoint a: " + voronoi.edges[closestEdge].va.x + ", " + voronoi.edges[closestEdge].va.y);
   console.log("edge endpoint b: " + voronoi.edges[closestEdge].vb.x + ", " + voronoi.edges[closestEdge].vb.y);
-  console.log("site on left side of edge: " + voronoi.edges[closestEdge].lSite.x + ", " + voronoi.edges[closestEdge].lSite.y);
-  console.log("site on right side of edge: " + voronoi.edges[closestEdge].rSite.x + ", " + voronoi.edges[closestEdge].rSite.y);
   let closestSite = {};
 
-  if (voronoi.edges[closestEdge].x - x < 0 || voronoi.edges[closestEdge].y - y < 0) {
-    closestSite = voronoi.edges[closestEdge].lSite;
-  } else {
-    closestSite = voronoi.edges[closestEdge].rSite;
+  if (voronoi.edges[closestEdge].lSite !== null) {
+  console.log("site on left side of edge: " + voronoi.edges[closestEdge].lSite.x + ", " + voronoi.edges[closestEdge].lSite.y);
   }
   
+  if (voronoi.edges[closestEdge].rSite !== null) {
+  console.log("site on right side of edge: " + voronoi.edges[closestEdge].rSite.x + ", " + voronoi.edges[closestEdge].rSite.y);
+  }
+  if (voronoi.edges[closestEdge].lSite !== null && (voronoi.edges[closestEdge].x - x < 0 || voronoi.edges[closestEdge].y - y < 0)) {
+    closestSite = voronoi.edges[closestEdge].lSite;
+  } else if (voronoi.edges[closestEdge].rSite !== null && (voronoi.edges[closestEdge].x - x > 0 || voronoi.edges[closestEdge].y - y > 0)) {
+    closestSite = voronoi.edges[closestEdge].rSite;
+  } else {
+    console.log("Within cell bounds: false");
+    return false;
+  }
+  console.log("within cell bounds: " + (closestSite.x === siteX && closestSite.y === siteY)); 
   return (closestSite.x === siteX && closestSite.y === siteY) ? true : false;
 }
