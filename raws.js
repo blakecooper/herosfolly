@@ -12,13 +12,14 @@ const RAWS = {
     "WHITE": "white"
   },
   "settings": {
+    "is_seen_opacity": .9,
     "min_room_size": 5,
     "max_room_size": 12,
     "rows":  64,
     "cols": 320,
     "potions_per_level": 20,
     "default_font_size": 1.5,
-    "base_spawn_rate": 600,
+    "base_spawn_rate": 500,
     "keymap": {
        "37": CONSTS.LEFT,
        "38": CONSTS.UP,
@@ -80,7 +81,8 @@ const RAWS = {
         if (this.hp < this.base_hp) {
           this.hp++;
         }  
-      }
+      },
+      "viewDistance": 10
     },
     "minion": {
       "id": "minion",
@@ -93,8 +95,9 @@ const RAWS = {
         "symbol": "m",
         "color": "ORANGE" 
       },
-      "spawnRate": .3,
-	"isMonstrous": true
+      "spawnRate": .1,
+      "isMonstrous": true,
+      "viewDistance": 10
     },
     "maxion": {
       "id": "maxion",
@@ -107,8 +110,9 @@ const RAWS = {
         "symbol": "M",
         "color": "ORANGE"
       },
-      "spawnRate": .05,
-      "isMonstrous": true
+      "spawnRate": .01,
+      "isMonstrous": true,
+      "viewDistance": 10
     },
     "potion": {
       "id": "potion",
@@ -156,6 +160,7 @@ const RAWS = {
   },
   "dimensions": {
     "hp": {
+      "id": "hp",
       "bgColor": "GREEN",
       "potionColor": "LIGHTGREEN",
       "potionEffect": function() {
@@ -163,6 +168,7 @@ const RAWS = {
       }
     },
     "atk": {
+      "id": "atk",
       "bgColor": "RED",
       "potionColor": "LIGHTRED",
       "potionEffect": function () {
@@ -170,6 +176,7 @@ const RAWS = {
       }
     },
     "def": {
+      "id": "def",
       "bgColor": "BLUE",
       "potionColor": "LIGHTBLUE",
       "potionEffect": function () {

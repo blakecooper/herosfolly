@@ -1,6 +1,10 @@
 const GAME = {
   acceptableLoopTimeout: 0,
 
+  wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
+
+  isSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
+
   voronoiDiagram: {},
 
   doorsEntered: 0,
@@ -16,9 +20,11 @@ const GAME = {
 
       const dimensionFactor = 1 + (this.doorsEntered * .1);
   
+      let dimDefBuff = this.dimension.id === "def" ? 1 : 0;
+
       let atkRoll = random(20);
    
-      let defenderHit = atkRoll > (defender.def * dimensionFactor);
+      let defenderHit = atkRoll > ((defender.def * dimensionFactor) + dimDefBuff);
       if (defenderHit) {
         let dmgToDefender = Math.floor(this.player.get("atk")/2) 
         + random(Math.ceil(this.player.get("atk")/2));
@@ -54,6 +60,8 @@ const GAME = {
  
     let dimensionFactor = 1 + (this.doorsEntered * .1); 
     let atkRoll = random(20) * dimensionFactor;
+
+    if (this.dimension.id === "atk") { atkRoll += 1 };
  
     let defenderHit = atkRoll > this.player.get("def");
     if (defenderHit) {
@@ -144,11 +152,10 @@ const GAME = {
     const enemyTypes = getListOfEntitiesWhere("isMonstrous", true);
     for (let i = 0; i < enemyTypes.length; i++) {
       let numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
-      * enemyTypes[i].spawnRate);
+      * enemyTypes[i].spawnRate) * (1 + (this.doorsEntered * .1));
  
       if (this.voronoiDiagram.cells === 'undefined'
       || this.voronoiSites.length === 0) {
-        console.log("spawning monsters randomly!");
         for (let j = 0; j < numberEnemies; j++) {
           retArr.push({ 
             ...new Entity(), 
@@ -503,6 +510,8 @@ const GAME = {
       //re-initialize entityMatrix
       this.map = LEVEL.generate();
       this.entityMatrix = this.initializeEntityMatrix();
+      this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
+      this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
       //skip rest of loop
       moveDownStairs = true;
     }
@@ -514,17 +523,19 @@ const GAME = {
   
     //Check for enemies next to player
     //Those enemies attack, others move toward player
-    for (let i = 0; i < this.enemies.length; i++) {
-      if (this.enemies[i].x > 0 && this.enemies[i].y > 0 
-      && Math.abs(this.player.get("x") - this.enemies[i].x) < 2 
-      && Math.abs(this.player.get("y") - this.enemies[i].y) < 2) {
-        this.monsterAttack(this.enemies[i]);
-      } else {
-        if ((this.enemies[i].id === "maxion" || random(20) > 1)
-        && this.monsterOnScreen(i)) {
-          this.enemyMoves(i);
+    if (!moveDownStairs) {
+      for (let i = 0; i < this.enemies.length; i++) {
+        if (this.enemies[i].x > 0 && this.enemies[i].y > 0 
+        && Math.abs(this.player.get("x") - this.enemies[i].x) < 2 
+        && Math.abs(this.player.get("y") - this.enemies[i].y) < 2) {
+          this.monsterAttack(this.enemies[i]);
+        } else {
+          if ((this.enemies[i].id === "maxion" || random(20) > 1)
+          && this.monsterOnScreen(i)) {
+            this.enemyMoves(i);
+          }	
         }	
-      }	
+      }
     }
   	
     //Check to see if player has died during the loop
@@ -538,7 +549,36 @@ const GAME = {
         this.appearDoors();
         VIEW.drawStatus("The shards have opened doors to other dimensions!");
     }
+
+    this.updateTilesSeenByPlayer();
+
     VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
+  },
+
+  updateTilesSeenByPlayer: function () {
+    this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
+
+    let oneWayViewDist = Math.floor(this.player.get("viewDistance")/2);
+    
+    let row = this.player.get("x") - oneWayViewDist;
+    let rowMax = row + this.player.get("viewDistance");
+
+    let col = this.player.get("y") - oneWayViewDist;
+    let colMax = this.player.get("y") + oneWayViewDist;
+
+ 
+    for (row; row < rowMax; row++) {
+      for (col; col < colMax; col++) {
+        if (typeof this.map[row] !== 'undefined'
+        && typeof this.map[row][col] !== 'undefined') {
+          this.isSeen[row][col] = true;
+          if (this.wasSeen[row][col] === false) {
+            this.wasSeen[row][col] = true;
+          }
+        }
+      }
+      col = this.player.get("y") - oneWayViewDist;
+    }
   },
 
   appearDoors: function () {
@@ -752,7 +792,8 @@ const GAME = {
     }    
    
     this.entityMatrix[this.player.get("x")][this.player.get("y")] = this.player;
-    
+  
+    this.updateTilesSeenByPlayer();  
   
     this.highscore = this.getHighScores(); 
     this.startView();
