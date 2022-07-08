@@ -1,6 +1,8 @@
 const GAME = {
   acceptableLoopTimeout: 0,
 
+  voronoiDiagram: {},
+
   doorsEntered: 0,
 
   shardsCollectedOnLevel: 0,
@@ -140,20 +142,55 @@ const GAME = {
     const retArr = [];
     
     const enemyTypes = getListOfEntitiesWhere("isMonstrous", true);
-  
     for (let i = 0; i < enemyTypes.length; i++) {
-      const numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
-        * enemyTypes[i].spawnRate);
-      for (let j = 0; j < numberEnemies; j++) {
-        retArr.push({ 
-          ...new Entity(), 
-          ...RAWS.entities[enemyTypes[i].id], 
-          ...this.getAcceptableCoordinateAsObject() 
-        });
+      let numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
+      * enemyTypes[i].spawnRate);
+ 
+      if (this.voronoiDiagram.cells === 'undefined'
+      || this.voronoiSites.length === 0) {
+        console.log("spawning monsters randomly!");
+        for (let j = 0; j < numberEnemies; j++) {
+          retArr.push({ 
+            ...new Entity(), 
+            ...RAWS.entities[enemyTypes[i].id], 
+            ...this.getAcceptableCoordinateAsObject() 
+          });
+        }
+      } else {
+        numberEnemies = Math.floor(numberEnemies/this.potionZoneParams.length);
+        for (let j = 0; j < this.potionZoneParams.length; j++) {
+          for (let k = 0; k < numberEnemies; k++) {
+            const enemy = {
+              ...new Entity(),
+              ...RAWS.entities[enemyTypes[i].id],
+              ...this.getAcceptableCoordinateAsObjectWithParams(
+                this.potionZoneParams[j].x1,
+                this.potionZoneParams[j].x2,
+                this.potionZoneParams[j].y1,
+                this.potionZoneParams[j].y2
+              )
+            }
+            if (isInVoronoiCell(
+              enemy.x,
+              enemy.y,
+              this.voronoiSites[j].x,
+              this.voronoiSites[j].y,
+              this.voronoiDiagram)) {
+                if (this.entityMatrix[enemy.x][enemy.y] === null
+                || ((this.entityMatrix[enemy.x][enemy.y].id !== "potion")
+                   &&(this.entityMatrix[enemy.x][enemy.y].id !== "player"))) {
+                  retArr.push(enemy);
+                }
+            }
+          }
+        }
       }
     }
     return retArr; 
   },
+
+  voronoiSites: [], 
+  potionZoneParams: [],
 
   enemyMoves: function(idx) {
     let randomMovementChoice = random(2);
@@ -208,10 +245,7 @@ const GAME = {
     let zoneWidth = Math.floor(RAWS.settings.cols / mapZoneCols);
     let zoneHeight = Math.floor(RAWS.settings.rows / 2);
     let potionsToGenerate = RAWS.settings.potions_per_level;
-
-    let voronoiSites = [];
-    let zoneParams = [];
-    
+ 
     for (let row = 0; row < 2; row++) {
       for (let col = 0; col < mapZoneCols; col++) {
         if (potionsToGenerate > 0) {
@@ -229,8 +263,8 @@ const GAME = {
           potion.render.color = dimColor;
           retMatrix[potion.x][potion.y] = potion;
           
-          voronoiSites.push({x: potion.x, y: potion.y});
-          zoneParams.push({
+          this.voronoiSites.push({x: potion.x, y: potion.y});
+          this.potionZoneParams.push({
             x1: (zoneHeight * row),
             x2: ((zoneHeight * row) + (zoneHeight-1)),
             y1: (zoneWidth * col),
@@ -243,44 +277,44 @@ const GAME = {
     let voronoi = new Voronoi();
     let bbox = { x1: 0, xr: RAWS.settings.rows-1, yt: 0, rb: RAWS.settings.cols-1 };
 
-    let diagram = voronoi.compute(voronoiSites, bbox);
+    this.voronoiDiagram = voronoi.compute(this.voronoiSites, bbox);
     
-    for (let edge = 0; edge < diagram.edges.length; edge++) {
-        if (!Number.isNaN(Math.floor(diagram.edges[edge].va.x))
-           &&!Number.isNaN(Math.floor(diagram.edges[edge].va.y))
-           &&!Number.isNaN(Math.floor(diagram.edges[edge].vb.x))
-           &&!Number.isNaN(Math.floor(diagram.edges[edge].vb.y))) {
+    for (let edge = 0; edge < this.voronoiDiagram.edges.length; edge++) {
+        if (!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].va.x))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].va.y))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].vb.x))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].vb.y))) {
 
         
-        if (Math.floor(diagram.edges[edge].va.x < 0)) {
-            diagram.edges[edge].va.x = 0;
+        if (Math.floor(this.voronoiDiagram.edges[edge].va.x < 0)) {
+            this.voronoiDiagram.edges[edge].va.x = 0;
         }
 
-        if (Math.floor(diagram.edges[edge].va.y < 0)) {
-            diagram.edges[edge].va.y = 0;
+        if (Math.floor(this.voronoiDiagram.edges[edge].va.y < 0)) {
+            this.voronoiDiagram.edges[edge].va.y = 0;
         }
-        if (Math.floor(diagram.edges[edge].vb.x < 0)) {
-            diagram.edges[edge].vb.x = 0;
+        if (Math.floor(this.voronoiDiagram.edges[edge].vb.x < 0)) {
+            this.voronoiDiagram.edges[edge].vb.x = 0;
         }
-        if (Math.floor(diagram.edges[edge].vb.y < 0)) {
-            diagram.edges[edge].vb.y = 0;
+        if (Math.floor(this.voronoiDiagram.edges[edge].vb.y < 0)) {
+            this.voronoiDiagram.edges[edge].vb.y = 0;
         }
            }
     }
     
-    for (let site = 0; site < voronoiSites.length; site++) {
+    for (let site = 0; site < this.voronoiSites.length; site++) {
       //spawn an item in that range
       const numberShards = (RAWS.settings.base_spawn_rate 
-      * RAWS.entities.shard.spawnRate) / voronoiSites.length;
+      * RAWS.entities.shard.spawnRate) / this.voronoiSites.length;
       for (let i = 0; i < numberShards; i++) {
         const shard = {
             ...new Entity(),
             ...RAWS.entities.shard,
             ...this.getAcceptableCoordinateAsObjectWithParams(
-	      zoneParams[site].x1, 
-	      zoneParams[site].x2, 
-	      zoneParams[site].y1, 
-	      zoneParams[site].y2, 
+	      this.potionZoneParams[site].x1, 
+	      this.potionZoneParams[site].x2, 
+	      this.potionZoneParams[site].y1, 
+	      this.potionZoneParams[site].y2, 
   	    )
         };
   
@@ -288,12 +322,12 @@ const GAME = {
         if (isInVoronoiCell(
           shard.x, 
  	  shard.y, 
- 	  voronoiSites[site].x, 
-	  voronoiSites[site].y, 
-	  diagram
+ 	  this.voronoiSites[site].x, 
+	  this.voronoiSites[site].y, 
+	  this.voronoiDiagram
         )) {
           if (retMatrix[shard.x][shard.y] === null
-          || retMatrix[shard.x][shard.y].is !== "potion"){
+          || retMatrix[shard.x][shard.y].id !== "potion"){
             retMatrix[shard.x][shard.y] = shard;
           }
         } 
@@ -312,13 +346,6 @@ const GAME = {
   
       retMatrix[restore.x][restore.y] = restore;
     }
-     
-    for (let i = 0; i < this.enemies.length; i++) {
-      retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
-    }    
-   
-    retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
-    
   
     return retMatrix;
   },
@@ -475,7 +502,6 @@ const GAME = {
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
       this.map = LEVEL.generate();
-      this.enemies = this.populateEnemies();
       this.entityMatrix = this.initializeEntityMatrix();
       //skip rest of loop
       moveDownStairs = true;
@@ -717,8 +743,17 @@ const GAME = {
     const startingCoords = this.getAcceptableCoordinateAsObject();
 
     this.player.updateCoords(startingCoords.x, startingCoords.y); 
-    this.enemies = this.populateEnemies();
     this.entityMatrix = this.initializeEntityMatrix();
+    
+    this.enemies = this.populateEnemies();
+
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.entityMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
+    }    
+   
+    this.entityMatrix[this.player.get("x")][this.player.get("y")] = this.player;
+    
+  
     this.highscore = this.getHighScores(); 
     this.startView();
 
