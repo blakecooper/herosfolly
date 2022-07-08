@@ -72,24 +72,31 @@ const VIEW = {
           endRow = this.rowsVisible; 
       } else {
           endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
-          ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
+          ? x+Math.ceil(this.rowsVisible/2) :  (RAWS.settings.rows - 1);
       }
       
       if (colz === 0) { 
           endCol = this.colsVisible; 
       } else {
           endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
-          ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
+          ? y+Math.ceil(this.colsVisible/2) : (RAWS.settings.cols - 1);
       }
   
-      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
-      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
+      if (endRow === (RAWS.settings.rows-1)) { rowz = RAWS.settings.rows-this.rowsVisible; }
+      if (endCol === (RAWS.settings.cols)) { colz = RAWS.settings.cols-this.colsVisible; }
       
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
               if (map[row] !== undefined 
-              && map[row][col] !== null) {
+              && map[row][col] !== null
+              && GAME.wasSeen[row][col]) {
+//                  if (GAME.isSeen[row][col]) {
+//                    html += "<span style='opacity: " + RAWS.settings.is_seen_opacity + ";'>";
+//                  }
                   html += map[row][col];
+//                  if (GAME.isSeen[row][col]) {
+//                    html += "</span>";
+//                  }
               } else {
                   html += CONSTS.SPACE;
               }
@@ -136,7 +143,8 @@ const VIEW = {
       for (let row = rowz; row < endRow; row++) {
         for (let col = colz; col < endCol; col++) {
           if (entityMatrix[row] !== undefined
-          && entityMatrix[row][col] !== null) {
+          && entityMatrix[row][col] !== null
+          && GAME.wasSeen[row][col]) {
             html += "<span style='background-color: ";
             
             if (entityMatrix[row][col].id === "door") {
