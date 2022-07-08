@@ -231,25 +231,20 @@ const GAME = {
           
           voronoiSites.push({x: potion.x, y: potion.y});
           zoneParams.push({
-            x1: (zoneWidth * row),
-            x2: ((zoneWidth * row) + (zoneHeight-1)),
-            y1: (zoneHeight * col),
-            y2: ((zoneHeight * col) + (zoneWidth-1))
+            x1: (zoneHeight * row),
+            x2: ((zoneHeight * row) + (zoneHeight-1)),
+            y1: (zoneWidth * col),
+            y2: ((zoneWidth * col) + (zoneWidth-1))
   	  });
         }
       }
     }
-
-    console.log(voronoiSites);
-    console.log(zoneParams);
 
     let voronoi = new Voronoi();
     let bbox = { x1: 0, xr: RAWS.settings.rows-1, yt: 0, rb: RAWS.settings.cols-1 };
 
     let diagram = voronoi.compute(voronoiSites, bbox);
     
-    let hiveMap = initializeMatrix(this.map.length,this.map[0].length,"&nbsp");
-
     for (let edge = 0; edge < diagram.edges.length; edge++) {
         if (!Number.isNaN(Math.floor(diagram.edges[edge].va.x))
            &&!Number.isNaN(Math.floor(diagram.edges[edge].va.y))
@@ -270,17 +265,9 @@ const GAME = {
         if (Math.floor(diagram.edges[edge].vb.y < 0)) {
             diagram.edges[edge].vb.y = 0;
         }
-      hiveMap[Math.floor(diagram.edges[edge].va.x)][Math.floor(diagram.edges[edge].va.y)] = "E";
-      hiveMap[Math.floor(diagram.edges[edge].vb.x)][Math.floor(diagram.edges[edge].vb.y)] = "E";
            }
     }
-    let html = "";
-    for (let row = 0; row < hiveMap.length; row++) {
-        for (let col = 0; col < hiveMap[0].length; col++) {
-            html += hiveMap[row][col];
-        }
-    }
-    $("hive").innerHTML = html;
+    
     for (let site = 0; site < voronoiSites.length; site++) {
       //spawn an item in that range
       const numberShards = (RAWS.settings.base_spawn_rate 
@@ -296,7 +283,8 @@ const GAME = {
 	      zoneParams[site].y2, 
   	    )
         };
-   
+  
+    
         if (isInVoronoiCell(
           shard.x, 
  	  shard.y, 
@@ -311,6 +299,7 @@ const GAME = {
         } 
       }
     }
+
     const numberRestore = RAWS.settings.base_spawn_rate
     * RAWS.entities.restore.spawnRate;
   
@@ -347,7 +336,7 @@ const GAME = {
         acceptable = true;
       } else {
         this.acceptableTimeout++;
-        if (this.acceptableTimeout > 100) {break;}
+        if (this.acceptableTimeout > 1000000) {break;}
       }
     }
     
@@ -743,10 +732,10 @@ const GAME = {
     
     this.maybeUpdateHighScores();
     
-    const endString = "You died. ";
+    let endString = "You died. ";
 
     if (this.isNewHighScore) {
-      endString += "New high score though!";
+      endString = endString + "New high score though!";
     }
       
     VIEW.drawStatus(endString);

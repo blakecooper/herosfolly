@@ -12,13 +12,13 @@ const RAWS = {
     "WHITE": "white"
   },
   "settings": {
-    "min_room_size": 3,
+    "min_room_size": 5,
     "max_room_size": 12,
     "rows":  128,
     "cols": 320,
     "potions_per_level": 20,
     "default_font_size": 1.5,
-    "base_spawn_rate": 500,
+    "base_spawn_rate": 600,
     "keymap": {
        "37": CONSTS.LEFT,
        "38": CONSTS.UP,
@@ -93,7 +93,7 @@ const RAWS = {
         "symbol": "m",
         "color": "ORANGE" 
       },
-      "spawnRate": .5,
+      "spawnRate": .4,
 	"isMonstrous": true
     },
     "maxion": {
@@ -107,7 +107,7 @@ const RAWS = {
         "symbol": "M",
         "color": "ORANGE"
       },
-      "spawnRate": .1,
+      "spawnRate": .07,
       "isMonstrous": true
     },
     "potion": {
