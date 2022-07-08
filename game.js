@@ -1,4 +1,7 @@
 const GAME = {
+  acceptableLoopTimeout: 0,
+
+  voronoiDiagram: {},
 
   doorsEntered: 0,
 
@@ -71,10 +74,10 @@ const GAME = {
   },
   
   avoidEdges: function (axis, value) {
-    let mapDimension = ROWS - 1;
+    let mapDimension = RAWS.settings.rows - 1;
   
-    if (axis === COLS) {
-      mapDimension = COLS - 1;
+    if (axis === RAWS.settings.cols) {
+      mapDimension = RAWS.settings.cols - 1;
     }
   	
     if (value == 0) { 
@@ -139,20 +142,55 @@ const GAME = {
     const retArr = [];
     
     const enemyTypes = getListOfEntitiesWhere("isMonstrous", true);
-  
     for (let i = 0; i < enemyTypes.length; i++) {
-      const numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
-        * enemyTypes[i].spawnRate);
-      for (let j = 0; j < numberEnemies; j++) {
-        retArr.push({ 
-          ...new Entity(), 
-          ...RAWS.entities[enemyTypes[i].id], 
-          ...this.getAcceptableCoordinateAsObject() 
-        });
+      let numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
+      * enemyTypes[i].spawnRate);
+ 
+      if (this.voronoiDiagram.cells === 'undefined'
+      || this.voronoiSites.length === 0) {
+        console.log("spawning monsters randomly!");
+        for (let j = 0; j < numberEnemies; j++) {
+          retArr.push({ 
+            ...new Entity(), 
+            ...RAWS.entities[enemyTypes[i].id], 
+            ...this.getAcceptableCoordinateAsObject() 
+          });
+        }
+      } else {
+        numberEnemies = Math.floor(numberEnemies/this.potionZoneParams.length);
+        for (let j = 0; j < this.potionZoneParams.length; j++) {
+          for (let k = 0; k < numberEnemies; k++) {
+            const enemy = {
+              ...new Entity(),
+              ...RAWS.entities[enemyTypes[i].id],
+              ...this.getAcceptableCoordinateAsObjectWithParams(
+                this.potionZoneParams[j].x1,
+                this.potionZoneParams[j].x2,
+                this.potionZoneParams[j].y1,
+                this.potionZoneParams[j].y2
+              )
+            }
+            if (isInVoronoiCell(
+              enemy.x,
+              enemy.y,
+              this.voronoiSites[j].x,
+              this.voronoiSites[j].y,
+              this.voronoiDiagram)) {
+                if (this.entityMatrix[enemy.x][enemy.y] === null
+                || ((this.entityMatrix[enemy.x][enemy.y].id !== "potion")
+                   &&(this.entityMatrix[enemy.x][enemy.y].id !== "player"))) {
+                  retArr.push(enemy);
+                }
+            }
+          }
+        }
       }
     }
     return retArr; 
   },
+
+  voronoiSites: [], 
+  potionZoneParams: [],
 
   enemyMoves: function(idx) {
     let randomMovementChoice = random(2);
@@ -197,19 +235,105 @@ const GAME = {
   initializeEntityMatrix: function () {
     const retMatrix = initializeMatrix(this.map.length,this.map[0].length,null);
 
-    const numberShards = RAWS.settings.base_spawn_rate 
-    * RAWS.entities.shard.spawnRate;
-   
-    for (let i = 0; i < numberShards; i++) {
-      const shard = {
-          ...new Entity(),
-          ...RAWS.entities.shard,
-          ...this.getAcceptableCoordinateAsObject()
-      };
+    //Spawn potions first
+    //split map into sections based on how many potions
+    let numberMapZones = RAWS.settings.potions_per_level;
+
+    if (numberMapZones % 2 !== 0) { numberMapZones++; }
+    
+    let mapZoneCols = Math.floor(numberMapZones / 2);
+    let zoneWidth = Math.floor(RAWS.settings.cols / mapZoneCols);
+    let zoneHeight = Math.floor(RAWS.settings.rows / 2);
+    let potionsToGenerate = RAWS.settings.potions_per_level;
  
-      retMatrix[shard.x][shard.y] = shard;
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < mapZoneCols; col++) {
+        if (potionsToGenerate > 0) {
+          const potion = {
+              ...new Entity(),
+              ...RAWS.entities.potion,
+              ...this.getAcceptableCoordinateAsObjectWithParams(
+                (zoneHeight * row),
+                ((zoneHeight * row) + (zoneHeight-1)),
+                (zoneWidth * col),
+                ((zoneWidth * col) + (zoneWidth-1))
+              )
+          }
+          const dimColor = this.dimension.potionColor;
+          potion.render.color = dimColor;
+          retMatrix[potion.x][potion.y] = potion;
+          
+          this.voronoiSites.push({x: potion.x, y: potion.y});
+          this.potionZoneParams.push({
+            x1: (zoneHeight * row),
+            x2: ((zoneHeight * row) + (zoneHeight-1)),
+            y1: (zoneWidth * col),
+            y2: ((zoneWidth * col) + (zoneWidth-1))
+  	  });
+        }
+      }
+    }
+
+    let voronoi = new Voronoi();
+    let bbox = { x1: 0, xr: RAWS.settings.rows-1, yt: 0, rb: RAWS.settings.cols-1 };
+
+    this.voronoiDiagram = voronoi.compute(this.voronoiSites, bbox);
+    
+    for (let edge = 0; edge < this.voronoiDiagram.edges.length; edge++) {
+        if (!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].va.x))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].va.y))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].vb.x))
+           &&!Number.isNaN(Math.floor(this.voronoiDiagram.edges[edge].vb.y))) {
+
+        
+        if (Math.floor(this.voronoiDiagram.edges[edge].va.x < 0)) {
+            this.voronoiDiagram.edges[edge].va.x = 0;
+        }
+
+        if (Math.floor(this.voronoiDiagram.edges[edge].va.y < 0)) {
+            this.voronoiDiagram.edges[edge].va.y = 0;
+        }
+        if (Math.floor(this.voronoiDiagram.edges[edge].vb.x < 0)) {
+            this.voronoiDiagram.edges[edge].vb.x = 0;
+        }
+        if (Math.floor(this.voronoiDiagram.edges[edge].vb.y < 0)) {
+            this.voronoiDiagram.edges[edge].vb.y = 0;
+        }
+           }
     }
     
+    for (let site = 0; site < this.voronoiSites.length; site++) {
+      //spawn an item in that range
+      const numberShards = (RAWS.settings.base_spawn_rate 
+      * RAWS.entities.shard.spawnRate) / this.voronoiSites.length;
+      for (let i = 0; i < numberShards; i++) {
+        const shard = {
+            ...new Entity(),
+            ...RAWS.entities.shard,
+            ...this.getAcceptableCoordinateAsObjectWithParams(
+	      this.potionZoneParams[site].x1, 
+	      this.potionZoneParams[site].x2, 
+	      this.potionZoneParams[site].y1, 
+	      this.potionZoneParams[site].y2, 
+  	    )
+        };
+  
+    
+        if (isInVoronoiCell(
+          shard.x, 
+ 	  shard.y, 
+ 	  this.voronoiSites[site].x, 
+	  this.voronoiSites[site].y, 
+	  this.voronoiDiagram
+        )) {
+          if (retMatrix[shard.x][shard.y] === null
+          || retMatrix[shard.x][shard.y].id !== "potion"){
+            retMatrix[shard.x][shard.y] = shard;
+          }
+        } 
+      }
+    }
+
     const numberRestore = RAWS.settings.base_spawn_rate
     * RAWS.entities.restore.spawnRate;
   
@@ -222,38 +346,24 @@ const GAME = {
   
       retMatrix[restore.x][restore.y] = restore;
     }
-     
-    for (let i = 0; i < RAWS.settings.potions_per_level; i++) {
-      const potion = {
-          ...new Entity(),
-          ...RAWS.entities.potion,
-          ...this.getAcceptableCoordinateAsObject()
-      }
-      const dimColor = this.dimension.potionColor;
-      potion.render.color = dimColor;
-      retMatrix[potion.x][potion.y] = potion;
-    }
-  
-    for (let i = 0; i < this.enemies.length; i++) {
-      retMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
-    }    
-   
-    retMatrix[this.player.get("x")][this.player.get("y")] = this.player;
-    
   
     return retMatrix;
   },
- 
-  getAcceptableCoordinateAsObject: function () {
+
+  getAcceptableCoordinateAsObjectWithParams: function (x1, x2, y1, y2) {
     let acceptable = false;
+    this.acceptableTimeout = 0;
     const coordsArr = [-1, -1];
 
     while (!acceptable) {
-      coordsArr[0] = this.getRandomCoordinate(this.map.length);
-      coordsArr[1] = this.getRandomCoordinate(this.map[0].length);
+      coordsArr[0] = this.getRandomCoordinateWithParams(CONSTS.ROW, x2-x1)+x1;
+      coordsArr[1] = this.getRandomCoordinateWithParams(CONSTS.COL, y2-y1)+y1;
 
       if (this.map[coordsArr[0]][coordsArr[1]] === RAWS.map.text.floor) {
         acceptable = true;
+      } else {
+        this.acceptableTimeout++;
+        if (this.acceptableTimeout > 1000000) {break;}
       }
     }
     
@@ -261,6 +371,11 @@ const GAME = {
       x: coordsArr[0],
       y: coordsArr[1]
     };
+    
+  },
+
+  getAcceptableCoordinateAsObject: function () {
+    return this.getAcceptableCoordinateAsObjectWithParams(0, this.map.length, 0, this.map[0].length);
   },
   
   getEnemyAt: function (x,y) {
@@ -290,11 +405,21 @@ const GAME = {
     }
   },
 
-  getRandomCoordinate: function (axis) {
-    let mapLimit = ROWS;
+  getRandomCoordinateWithParams: function(axis, limit) {
+    let mapLimit = RAWS.settings.rows;
 
-    if  (axis === COLS) {
-     mapLimit = COLS;
+    if (axis === CONSTS.COL) {
+      mapLimit = RAWS.settings.cols;
+    }
+
+    return this.avoidEdges(axis, random(limit));
+  }, 
+
+  getRandomCoordinate: function (axis) {
+    let mapLimit = RAWS.settings.rows;
+
+    if  (axis === CONSTS.COL) {
+     mapLimit = RAWS.settings.cols;
     }
     return this.avoidEdges(axis, random(mapLimit-1));
   },
@@ -376,8 +501,7 @@ const GAME = {
       this.doorsNotAppeared = true;
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
-      this.map = generateLevel();
-      this.enemies = this.populateEnemies();
+      this.map = LEVEL.generate();
       this.entityMatrix = this.initializeEntityMatrix();
       //skip rest of loop
       moveDownStairs = true;
@@ -447,7 +571,7 @@ const GAME = {
 
   doorsNotAppeared: true,
 
-  map: generateLevel(),
+  map: LEVEL.generate(),
 
   monsterOnScreen: function (i) {
     if ((this.enemies[i].x > (this.player.get("x") - (VIEW.rowsVisible/2))
@@ -465,13 +589,11 @@ const GAME = {
       this.highscore = this.player.get("shards");
       this.isNewHighScore = true;
     }
-    console.log(document.cookie);    
     document.cookie = 
       "highscores=" 
       + this.highscore 
       + "; SameSite=Strict;";
 
-    console.log(document.cookie);
   },
 
   movePlayerTo: function (x,y) {
@@ -582,8 +704,8 @@ const GAME = {
     let acceptablePlacement = false;
   
     while (!acceptablePlacement) {
-      let x = getRandomCoordinate(ROWS);
-      let y = getRandomCoordinate(COLS);
+      let x = getRandomCoordinate(RAWS.settings.rows);
+      let y = getRandomCoordinate(RAWS.settings.cols);
   
       if (this.map[x][y] === RAWS.map.text.floor 
       && noEntitiesOnSquare(x, y)) {
@@ -615,14 +737,23 @@ const GAME = {
     //TODO: add this back in after new VIEW is complete
     //checkForMobileDevice();
 
-    this.map = generateLevel(); 
+    this.map = LEVEL.generate(); 
     this.player = this.initializePlayer;
 
     const startingCoords = this.getAcceptableCoordinateAsObject();
 
     this.player.updateCoords(startingCoords.x, startingCoords.y); 
-    this.enemies = this.populateEnemies();
     this.entityMatrix = this.initializeEntityMatrix();
+    
+    this.enemies = this.populateEnemies();
+
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.entityMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
+    }    
+   
+    this.entityMatrix[this.player.get("x")][this.player.get("y")] = this.player;
+    
+  
     this.highscore = this.getHighScores(); 
     this.startView();
 
@@ -636,10 +767,10 @@ const GAME = {
     
     this.maybeUpdateHighScores();
     
-    const endString = "You died. ";
+    let endString = "You died. ";
 
     if (this.isNewHighScore) {
-      endString += "New high score though!";
+      endString = endString + "New high score though!";
     }
       
     VIEW.drawStatus(endString);

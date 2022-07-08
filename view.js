@@ -4,7 +4,7 @@ const VIEW = {
   "buffer": 125,
 
   "clearStatus": function () {
-    $("status").innerHTML = "";
+      $("status1").style = "color: grey;";
   },
 
   "checkForMobileDevice": function () {
@@ -71,19 +71,19 @@ const VIEW = {
       if (rowz === 0) { 
           endRow = this.rowsVisible; 
       } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < ROWS 
-          ? x+Math.ceil(this.rowsVisible/2) :  ROWS;
+          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+          ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
       }
       
       if (colz === 0) { 
           endCol = this.colsVisible; 
       } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < COLS 
-          ? y+Math.ceil(this.colsVisible/2) : COLS;
+          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+          ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-      if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
-      if (endCol === COLS) { colz = COLS-this.colsVisible; }
+      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
+      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
       
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
@@ -119,19 +119,19 @@ const VIEW = {
       if (rowz === 0) { 
           endRow = this.rowsVisible; 
       } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < ROWS 
-          ? x+Math.ceil(this.rowsVisible/2) :  ROWS;
+          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+          ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
       }
       
       if (colz === 0) { 
           endCol = this.colsVisible; 
       } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < COLS 
-          ? y+Math.ceil(this.colsVisible/2) : COLS;
+          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+          ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-      if (endRow === ROWS) { rowz = ROWS-this.rowsVisible; }
-      if (endCol === COLS) { colz = COLS-this.colsVisible; }
+      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
+      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
  
       for (let row = rowz; row < endRow; row++) {
         for (let col = colz; col < endCol; col++) {
@@ -218,9 +218,20 @@ const VIEW = {
 
       $("stats").innerHTML = html;
   },
+    "statusList": ["","","",""],
+
   "drawStatus": function (message) {
-    $("status").innerHTML = message;
-    let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
+ 
+    this.statusList.push(message);
+
+    $("status1").style = "color: white;";
+    $("status1").innerHTML = this.statusList[this.statusList.length-1];
+    $("status2").innerHTML = this.statusList[this.statusList.length-2];
+    $("status3").innerHTML = this.statusList[this.statusList.length-3];
+    $("status4").innerHTML = this.statusList[this.statusList.length-4];
+  
+  //change this to a function that greys out instead of removes the new message
+      let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
   },
  
   "rowsVisible": -1,
@@ -265,9 +276,9 @@ const VIEW = {
   
   let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
   let systemFontSize = parseFloat(style);
-  		let statsStyleUpdate = "top: " + (systemFontSize * ROWS + buffer) + "px;";
+  		let statsStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer) + "px;";
   		$("stats").style = statsStyleUpdate;
-  		let statusStyleUpdate = "top: " + (systemFontSize * ROWS + buffer + 35) + "px;"; 
+  		let statusStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer + 35) + "px;"; 
   		$("status").style = statusStyleUpdate;
   },
 
