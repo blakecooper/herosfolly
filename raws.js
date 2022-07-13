@@ -13,13 +13,14 @@ const RAWS = {
   },
   "settings": {
     "is_seen_opacity": .9,
-    "min_room_size": 5,
-    "max_room_size": 12,
-    "rows":  64,
+    "min_room_size": 4,
+    "max_room_size": 9,
+    "rows": 128,
     "cols": 320,
-    "potions_per_level": 20,
+    "potions_per_level": 24,
     "default_font_size": 1.5,
-    "base_spawn_rate": 500,
+    "base_spawn_rate": 600,
+    "shards_required_to_advance": 50,
     "keymap": {
        "37": CONSTS.LEFT,
        "38": CONSTS.UP,
@@ -82,7 +83,7 @@ const RAWS = {
           this.hp++;
         }  
       },
-      "viewDistance": 10
+      "viewDistance": 12
     },
     "minion": {
       "id": "minion",
@@ -95,9 +96,9 @@ const RAWS = {
         "symbol": "m",
         "color": "ORANGE" 
       },
-      "spawnRate": .1,
+      "spawnRate": .15,
       "isMonstrous": true,
-      "viewDistance": 10
+      "viewDistance": 11
     },
     "maxion": {
       "id": "maxion",
@@ -110,7 +111,7 @@ const RAWS = {
         "symbol": "M",
         "color": "ORANGE"
       },
-      "spawnRate": .01,
+      "spawnRate": .05,
       "isMonstrous": true,
       "viewDistance": 10
     },
@@ -138,7 +139,7 @@ const RAWS = {
           consumer.shards++;
         }
       },
-      "spawnRate": .5
+      "spawnRate": 1
     },
     "restore": {
       "id": "restore",
@@ -155,7 +156,7 @@ const RAWS = {
     },
     "door": {
       "id": "door",
-      "spawnRate": .1 //spawn rate for each dimension's doors
+      "spawnRate": .05 //spawn rate for each dimension's doors
     }
   },
   "dimensions": {

@@ -18,7 +18,7 @@ const GAME = {
   playerAttack: function (defender) {
     if (defender.canFight()) {
 
-      const dimensionFactor = 1 + (this.doorsEntered * .1);
+      const dimensionFactor = 1 + (this.doorsEntered * .2);
   
       let dimDefBuff = this.dimension.id === "def" ? 1 : 0;
 
@@ -58,10 +58,10 @@ const GAME = {
 
   monsterAttack: function (attacker) {
  
-    let dimensionFactor = 1 + (this.doorsEntered * .1); 
+    let dimensionFactor = 1 + (this.doorsEntered * .2); 
     let atkRoll = random(20) * dimensionFactor;
 
-    if (this.dimension.id === "atk") { atkRoll += 1 };
+    if (this.dimension.id === "atk") { atkRoll += (this.doorsEntered * .2) };
  
     let defenderHit = atkRoll > this.player.get("def");
     if (defenderHit) {
@@ -152,7 +152,7 @@ const GAME = {
     const enemyTypes = getListOfEntitiesWhere("isMonstrous", true);
     for (let i = 0; i < enemyTypes.length; i++) {
       let numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
-      * enemyTypes[i].spawnRate) * (1 + (this.doorsEntered * .1));
+      * enemyTypes[i].spawnRate) * (1 + (this.doorsEntered * .2));
  
       if (this.voronoiDiagram.cells === 'undefined'
       || this.voronoiSites.length === 0) {
@@ -544,7 +544,7 @@ const GAME = {
       this.play = false;
     }
  
-    if (this.shardsCollectedOnLevel === 20
+    if (this.shardsCollectedOnLevel === RAWS.settings.shards_required_to_advance
     && this.doorsNotAppeared) {
         this.appearDoors();
         VIEW.drawStatus("The shards have opened doors to other dimensions!");
@@ -554,11 +554,77 @@ const GAME = {
 
     VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
+  viewPoints: [],
 
-  updateTilesSeenByPlayer: function () {
+  updateTilesSeenByPlayer: function (dist) {
+  //NEW algo:
+  //base case: target cells in box level 1
+
+    if (dist === this.player.get("viewDistance")) {
+      this.viewPoints = initializeMatrix((2 * dist) + 1, (2 * dist) + 1, {visited: false, visible: false, isWall: false});
+    }
+
+    let row = Math.floor(this.player.get("x") - dist);
+    let startRow = Math.floor(this.player.get("x") - dist);
+    let col = Math.floor(this.player.get("y") - dist);
+    let startCol = Math.floor(this.player.get("y") - dist);
+
+    let maxRow = Math.ceil(this.player.get("x") + dist);
+    let maxCol = Math.ceil(this.player.get("y") + dist);
+
+    //base case: we've reached the player's current location
+    if (dist === 0) {
+      return;
+    }
+
+    //base case: player is looking into the ring of cells immediately surrounding them
+    if (dist === 1) {
+      for (row; row < maxRow; row++) {
+        for (col; col < maxCol; col++) {
+          if (
+          (col === 0 || col === (maxCol - 1))
+          || (row === 0 || row === (maxRow - 1))) {
+            this.viewPoints[row - startingRow][col - startingCol].visited = true;
+            
+            if (this.map[row][col] === RAWS.map.wall) {
+              this.viewPoints[row - startingRow][col - startingCol].isWall = true;
+            } else if (this.map[row][col] === RAWS.map.floor) {
+              this.viewPoints[row - startingRow][col - startingCol].visible = true;
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    //recursion
+    for (row; row < maxRow; row++) {
+      for (col; col < maxCol; col++) {
+        
+        this.viewPoints[row - startingRow][col - startingCol].visited = true;
+
+        //check next adjacent cell in line of sight from player
+        let xOffset = (this.player.get("x") - row);
+        let yOffset = xOffset > 0 ? 0 : (this.player.get("y") - col);
+
+        if (!this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visited) {
+          this.updateTilesSeenByPlayer(dist - 1);
+        }
+
+        if (this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visible
+        && this.map[row + xOffset][col + yOffset] !== RAWS.map.text.wall {
+          this.viewPoints[row - startingRow][col - startingCol].visible = true;
+        }
+
+        if (this.map[row][col] === RAWS.map.text.wall) {
+            this.viewPoints[row - startingRow][col - startingCol].isWall = true;
+        }
+      }
+    }
+
+    //review everything after this!
     this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
 
-    let oneWayViewDist = Math.floor(this.player.get("viewDistance")/2);
     
     let row = this.player.get("x") - oneWayViewDist;
     let rowMax = row + this.player.get("viewDistance");
