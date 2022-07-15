@@ -557,69 +557,60 @@ const GAME = {
   viewPoints: [],
 
   updateTilesSeenByPlayer: function (dist) {
-  //NEW algo:
-  //base case: target cells in box level 1
+    this.viewPoints = initializeMatrix((2 * dist) + 1, (2 * dist) + 1, {
+      visited: false,
+      visible: false,
+      isWall: false
+    });
 
-    if (dist === this.player.get("viewDistance")) {
-      this.viewPoints = initializeMatrix((2 * dist) + 1, (2 * dist) + 1, {visited: false, visible: false, isWall: false});
-    }
+    /update player location
+    this.viewPoints[dist][dist].visited = true;
+    this.viewPoints[dist][dist].visible = true;
+ 
+    let lvl = 1;
 
-    let row = Math.floor(this.player.get("x") - dist);
-    let startingRow = Math.floor(this.player.get("x") - dist);
-    let col = Math.floor(this.player.get("y") - dist);
-    let startingCol = Math.floor(this.player.get("y") - dist);
+    while (lvl < dist) {
+      let row, col = dist-lvl;
 
-    let maxRow = Math.ceil(this.player.get("x") + dist);
-    let maxCol = Math.ceil(this.player.get("y") + dist);
+      for (row; row < dist+lvl+1; row++) {
+        for (col; col < dist+lvl+1; col++) {
+          let xDir = row < dist ? 1 : -1;
+   
+          this.viewPoints[row][col].visited = true;
 
-    //base case: we've reached the player's current location
-    if (dist === 0) {
-      return;
-    }
+          //corners
+          if ((row === dist-lvl || row === dist+lvl)
+          && (col === dist-lvl || col === dist+lvl)) {
+            let yDir = col < dist ? 1 : -1;
 
-    //base case: player is looking into the ring of cells immediately surrounding them
-    if (dist === 1) {
-      console.log("entered base case: dist === 1");
-      for (row; row < maxRow; row++) {
-        for (col; col < maxCol; col++) {
-          if (row !== this.player.get("x") && col !== this.player.get("y")) {
-            this.viewPoints[row - startingRow][col - startingCol].visited = true;
+            if (this.viewPoints[row + xDir][col + yDir].visible
+            && !this.viewPoints[row + xDir][col + yDir].isWall) {
             
-            if (this.map[row][col] === RAWS.map.text.wall) {
-              this.viewPoints[row - startingRow][col - startingCol].isWall = true;
-            } else if (this.map[row][col] === RAWS.map.text.floor) {
-              this.viewPoints[row - startingRow][col - startingCol].visible = true;
+              this.viewPoints[row][col].visible = true;
+
             }
+
+            //check for walls on map
           }
+
+
         }
       }
-      return;
-    }
 
-    //recursion
-    for (row; row < maxRow; row++) {
-      for (col; col < maxCol; col++) {
-        console.log("Recursion on dist=" + dist);
-        this.viewPoints[row - startingRow][col - startingCol].visited = true;
 
-        //check next adjacent cell in line of sight from player
-        let xOffset = (this.player.get("x") - row);
-        let yOffset = xOffset !== 0 ? 0 : (this.player.get("y") - col);
+      lvl++;
+    }   
+      //else
+        //if on top or bottom rows
+          //move one toward player on X only
+          //same as above
+        //else
+          //if col 0 or length-1
+            //move one toward player on Y only
+            //same as above
 
-        if (!this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visited) {
-          this.updateTilesSeenByPlayer(dist - 1);
-        } else {
-          if (this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visible
-              && !this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].isWall) {
-            this.viewPoints[row - startingRow][col - startingCol].visible = true;
-          }
-  
-          if (this.map[row][col] === RAWS.map.text.wall) {
-              this.viewPoints[row - startingRow][col - startingCol].isWall = true;
-          }
-        } 
-      }
-    }
+    
+
 
     row = 0;
     col = 0;
