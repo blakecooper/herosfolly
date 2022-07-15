@@ -550,7 +550,7 @@ const GAME = {
         VIEW.drawStatus("The shards have opened doors to other dimensions!");
     }
 
-    this.updateTilesSeenByPlayer();
+    this.updateTilesSeenByPlayer(this.player.get("viewDistance"));
 
     VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
@@ -565,9 +565,9 @@ const GAME = {
     }
 
     let row = Math.floor(this.player.get("x") - dist);
-    let startRow = Math.floor(this.player.get("x") - dist);
+    let startingRow = Math.floor(this.player.get("x") - dist);
     let col = Math.floor(this.player.get("y") - dist);
-    let startCol = Math.floor(this.player.get("y") - dist);
+    let startingCol = Math.floor(this.player.get("y") - dist);
 
     let maxRow = Math.ceil(this.player.get("x") + dist);
     let maxCol = Math.ceil(this.player.get("y") + dist);
@@ -579,16 +579,15 @@ const GAME = {
 
     //base case: player is looking into the ring of cells immediately surrounding them
     if (dist === 1) {
+      console.log("entered base case: dist === 1");
       for (row; row < maxRow; row++) {
         for (col; col < maxCol; col++) {
-          if (
-          (col === 0 || col === (maxCol - 1))
-          || (row === 0 || row === (maxRow - 1))) {
+          if (row !== this.player.get("x") && col !== this.player.get("y")) {
             this.viewPoints[row - startingRow][col - startingCol].visited = true;
             
-            if (this.map[row][col] === RAWS.map.wall) {
+            if (this.map[row][col] === RAWS.map.text.wall) {
               this.viewPoints[row - startingRow][col - startingCol].isWall = true;
-            } else if (this.map[row][col] === RAWS.map.floor) {
+            } else if (this.map[row][col] === RAWS.map.text.floor) {
               this.viewPoints[row - startingRow][col - startingCol].visible = true;
             }
           }
@@ -600,51 +599,44 @@ const GAME = {
     //recursion
     for (row; row < maxRow; row++) {
       for (col; col < maxCol; col++) {
-        
+        console.log("Recursion on dist=" + dist);
         this.viewPoints[row - startingRow][col - startingCol].visited = true;
 
         //check next adjacent cell in line of sight from player
         let xOffset = (this.player.get("x") - row);
-        let yOffset = xOffset > 0 ? 0 : (this.player.get("y") - col);
+        let yOffset = xOffset !== 0 ? 0 : (this.player.get("y") - col);
 
         if (!this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visited) {
           this.updateTilesSeenByPlayer(dist - 1);
-        }
-
-        if (this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visible
-        && this.map[row + xOffset][col + yOffset] !== RAWS.map.text.wall {
-          this.viewPoints[row - startingRow][col - startingCol].visible = true;
-        }
-
-        if (this.map[row][col] === RAWS.map.text.wall) {
-            this.viewPoints[row - startingRow][col - startingCol].isWall = true;
-        }
+        } else {
+          if (this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].visible
+              && !this.viewPoints[row - startingRow + xOffset][col - startingCol + yOffset].isWall) {
+            this.viewPoints[row - startingRow][col - startingCol].visible = true;
+          }
+  
+          if (this.map[row][col] === RAWS.map.text.wall) {
+              this.viewPoints[row - startingRow][col - startingCol].isWall = true;
+          }
+        } 
       }
     }
 
-    //review everything after this!
-    this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
+    row = 0;
+    col = 0;
 
-    
-    let row = this.player.get("x") - oneWayViewDist;
-    let rowMax = row + this.player.get("viewDistance");
-
-    let col = this.player.get("y") - oneWayViewDist;
-    let colMax = this.player.get("y") + oneWayViewDist;
-
- 
-    for (row; row < rowMax; row++) {
-      for (col; col < colMax; col++) {
-        if (typeof this.map[row] !== 'undefined'
-        && typeof this.map[row][col] !== 'undefined') {
-          this.isSeen[row][col] = true;
-          if (this.wasSeen[row][col] === false) {
-            this.wasSeen[row][col] = true;
+    for (row; row < this.viewPoints.length; row++) {
+      for (col; col < this.viewPoints[0].length; col++) {
+        if (typeof this.map[row + startingRow] !== 'undefined'
+        && typeof this.map[row + startingRow][col + startingCol] !== 'undefined') {
+          this.isSeen[row + startingRow][col + startingCol] = true;
+          if (this.wasSeen[row + startingRow][col + startingCol] === false) {
+            this.wasSeen[row + startingRow][col + startingRow] = true;
           }
         }
       }
-      col = this.player.get("y") - oneWayViewDist;
     }
+      
+    console.log(this.viewPoints);
   },
 
   appearDoors: function () {
@@ -859,7 +851,7 @@ const GAME = {
    
     this.entityMatrix[this.player.get("x")][this.player.get("y")] = this.player;
   
-    this.updateTilesSeenByPlayer();  
+    this.updateTilesSeenByPlayer(this.player.get("viewDistance"));  
   
     this.highscore = this.getHighScores(); 
     this.startView();
