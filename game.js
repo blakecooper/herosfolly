@@ -3,7 +3,7 @@ const GAME = {
 
   wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
 
-  isSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
+  isSeen: [],
 
   voronoiDiagram: {},
 
@@ -511,7 +511,11 @@ const GAME = {
       this.map = LEVEL.generate();
       this.entityMatrix = this.initializeEntityMatrix();
       this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
-      this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
+      this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, {
+        visited: false,
+        visible: false,
+        isWall: false
+      })
       //skip rest of loop
       moveDownStairs = true;
     }
@@ -557,89 +561,89 @@ const GAME = {
   viewPoints: [],
 
   updateTilesSeenByPlayer: function (dist) {
-    this.viewPoints = initializeMatrix((2 * dist) + 1, (2 * dist) + 1, {
+    this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, {
       visited: false,
       visible: false,
       isWall: false
-    });
+    }),
 
     //update player location
-    this.viewPoints[dist][dist].visited = true;
-    this.viewPoints[dist][dist].visible = true;
+    this.isSeen[this.player.get("x")][this.player.get("y")].visited = true;
+    this.isSeen[this.player.get("x")][this.player.get("y")].visible = true;
  
-    let lvl = dist-1;
+    let lvl = 1;
       
-
-    while (lvl > 0) {
+    while (lvl < this.player.get("viewDistance")) {
     
-      let mapX = (this.player.get("x") - (dist - lvl) > 0) ? (this.player.get("x") - (dist - level)) : 0;
-      let mapY = (this.player.get("y") - (dist - lvl) > 0) ? (this.player.get("y") - (dist - lvl) : 0;
-      
-      let row, col = lvl;
+    let row = this.player.get("x") - lvl;
+    let col = this.player.get("y") - lvl;
 
-      for (row; row < (this.viewPoints.length - 1 - lvl); row++) {
-        mapX++;
-        for (col; col < (this.viewPoints.length - 1 - lvl); col++) {
-          mapY++;
-          
-          let xDir = row < dist ? 1 : -1;
-          let yDir = col < dist ? 1 : -1;
-   
-          this.viewPoints[row][col].visited = true;
-
-          //corners
-          if ((row === lvl || row === (this.viewPoints.length - 1 - lvl))
-          && (col === dist-lvl || col === (this.viewPoints.length - 1 - lvl))) {
-
-            if (this.viewPoints[row + xDir][col + yDir].visible
-            && !this.viewPoints[row + xDir][col + yDir].isWall) {
+      for (row; row < (this.player.get("x") + lvl + 1); row++) {
+        for (col; col < (this.player.get("y") + lvl + 1); col++) {
+          if (!this.isSeen[row][col].visited) {
+            this.isSeen[row][col].visited = true;
             
-              this.viewPoints[row][col].visible = true;
-
-            }
-
-            //check for walls on map
-            if (this.map[mapX][mapY] === RAWS.map.text.wall) {
-              this.viewPoints[row][col].isWall = true;
-            }
-          } else {
-            if (this.map[mapX][mapY].id !== 'player') {
-              let lineXDir = (row === lvl || row === (this.viewPoints.length - 1 - lvl)) ? xDir : 0;          
-              let lineYDir = (col === lvl || col === (this.viewPoints.length - 1 - lvl)) ? yDir : 0;          
-
-              if (this.viewPoints[row + xLineDir][col + yLineDir].visible
-              && !this.viewPoints[row + xLineDir][col + yLineDir].isWall) {
+            let xDir = row < this.player.get("x") ? 1 : -1;
+            let yDir = col < this.player.get("y") ? 1 : -1;
+     
+            //corners
+            if ((row === (this.player.get("x") - lvl) || row === (this.player.get("x") + lvl))
+                && (col === (this.player.get("y") - lvl) || col === (this.player.get("y") + lvl))) {
+  
+              if (this.isSeen[row + xDir][col + yDir].visible
+              && !this.isSeen[row + xDir][col + yDir].isWall) {
               
-                this.viewPoints[row][col].visible = true;
+                this.isSeen[row][col].visible = true;
   
               }
   
               //check for walls on map
-              if (this.map[mapX][mapY] === RAWS.map.text.wall) {
-                this.viewPoints[row][col].isWall = true;
+              if (this.map[row][col] === RAWS.map.text.wall) {
+                this.isSeen[row][col].isWall = true;
+              }
+            } else {
+              //edges above/below/on sides of player
+              if (this.entityMatrix[row][col] && this.entityMatrix[row][col].id !== 'player') {
+                let lineXDir = (row === (this.player.get("x") - lvl) || row === (this.player.get("x") + lvl)) ? xDir : 0;          
+                let lineYDir = (xDir === 0) ? yDir : 0;          
+  
+                if (this.isSeen[row + lineXDir][col + lineYDir].visible
+                && !this.isSeen[row + lineXDir][col + lineYDir].isWall) {
+                
+                  this.isSeen[row][col].visible = true;
+    
+                }
+    
+                //check for walls on map
+                if (this.map[row][col] === RAWS.map.text.wall) {
+                  this.isSeen[row][col].isWall = true;
+                }
               }
             }
           }
         }
       }
-      lvl--;
+      lvl++;
     }   
 
-      let mapX = (this.player.get("x") - (dist - lvl) > 0) ? (this.player.get("x") - (dist - level)) : 0;
-      let mapY = (this.player.get("y") - (dist - lvl) > 0) ? (this.player.get("y") - (dist - lvl) : 0;
-//    for (mapX; mapX < this.viewPoints.length; row++) {
-//      for (col; col < this.viewPoints[0].length; col++) {
-//        if (typeof this.map[row + startingRow] !== 'undefined'
-//        && typeof this.map[row + startingRow][col + startingCol] !== 'undefined') {
-//          this.isSeen[row + startingRow][col + startingCol] = true;
-//          if (this.wasSeen[row + startingRow][col + startingCol] === false) {
-//            this.wasSeen[row + startingRow][col + startingRow] = true;
-//          }
-//        }
-//      }
-//    }
-      
-    console.log(this.viewPoints);
+    let mapX = (this.player.get("x") - dist > 0) ? (this.player.get("x") - dist) : 0;
+    let mapY = (this.player.get("y") - dist > 0) ? (this.player.get("y") - dist) : 0;
+
+    let mapXMax = (this.player.get("x") + dist < this.map.length) ? (this.player.get("x") + dist) : this.map.length - 1;
+
+    let mapYMax = (this.player.get("y") + dist < this.map[0].length) ? (this.player.get("y") + dist) : this.map[0].length - 1;
+    
+    for (mapX; mapX < mapXMax; mapX++) {
+      for (mapY; mapY < mapYMax; mapY++) {
+        if (typeof this.map[mapX] !== 'undefined'
+        && typeof this.map[mapX][mapY] !== 'undefined') {
+          
+          if (this.wasSeen[mapX][mapY] === false && this.isSeen[mapX][mapY].visible) {
+            this.wasSeen[mapX][mapY] = true;
+          }
+        }
+      }
+    }
   },
 
   appearDoors: function () {
