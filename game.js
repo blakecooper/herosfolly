@@ -511,11 +511,6 @@ const GAME = {
       this.map = LEVEL.generate();
       this.entityMatrix = this.initializeEntityMatrix();
       this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
-      this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, {
-        visited: false,
-        visible: false,
-        isWall: false
-      })
       //skip rest of loop
       moveDownStairs = true;
     }
@@ -560,89 +555,29 @@ const GAME = {
   },
   viewPoints: [],
 
-  updateTilesSeenByPlayer: function (dist) {
-    this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, {
-      visited: false,
-      visible: false,
-      isWall: false
-    }),
+ updateTilesSeenByPlayer: function () {
+    this.isSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
 
-    //update player location
-    this.isSeen[this.player.get("x")][this.player.get("y")].visited = true;
-    this.isSeen[this.player.get("x")][this.player.get("y")].visible = true;
+    let oneWayViewDist = Math.floor(this.player.get("viewDistance")/2);
+    
+    let row = this.player.get("x") - oneWayViewDist;
+    let rowMax = row + this.player.get("viewDistance");
+
+    let col = this.player.get("y") - oneWayViewDist;
+    let colMax = this.player.get("y") + oneWayViewDist;
+
  
-    let lvl = 1;
-      
-    while (lvl < this.player.get("viewDistance")) {
-    
-    let row = this.player.get("x") - lvl;
-    let col = this.player.get("y") - lvl;
-
-      for (row; row < (this.player.get("x") + lvl + 1); row++) {
-        for (col; col < (this.player.get("y") + lvl + 1); col++) {
-          if (!this.isSeen[row][col].visited) {
-            this.isSeen[row][col].visited = true;
-            
-            let xDir = row < this.player.get("x") ? 1 : -1;
-            let yDir = col < this.player.get("y") ? 1 : -1;
-     
-            //corners
-            if ((row === (this.player.get("x") - lvl) || row === (this.player.get("x") + lvl))
-                && (col === (this.player.get("y") - lvl) || col === (this.player.get("y") + lvl))) {
-  
-              if (this.isSeen[row + xDir][col + yDir].visible
-              && !this.isSeen[row + xDir][col + yDir].isWall) {
-              
-                this.isSeen[row][col].visible = true;
-  
-              }
-  
-              //check for walls on map
-              if (this.map[row][col] === RAWS.map.text.wall) {
-                this.isSeen[row][col].isWall = true;
-              }
-            } else {
-              //edges above/below/on sides of player
-              if (this.entityMatrix[row][col] && this.entityMatrix[row][col].id !== 'player') {
-                let lineXDir = (row === (this.player.get("x") - lvl) || row === (this.player.get("x") + lvl)) ? xDir : 0;          
-                let lineYDir = (xDir === 0) ? yDir : 0;          
-  
-                if (this.isSeen[row + lineXDir][col + lineYDir].visible
-                && !this.isSeen[row + lineXDir][col + lineYDir].isWall) {
-                
-                  this.isSeen[row][col].visible = true;
-    
-                }
-    
-                //check for walls on map
-                if (this.map[row][col] === RAWS.map.text.wall) {
-                  this.isSeen[row][col].isWall = true;
-                }
-              }
-            }
+    for (row; row < rowMax; row++) {
+      for (col; col < colMax; col++) {
+        if (typeof this.map[row] !== 'undefined'
+        && typeof this.map[row][col] !== 'undefined') {
+          this.isSeen[row][col] = true;
+          if (this.wasSeen[row][col] === false) {
+            this.wasSeen[row][col] = true;
           }
         }
       }
-      lvl++;
-    }   
-
-    let mapX = (this.player.get("x") - dist > 0) ? (this.player.get("x") - dist) : 0;
-    let mapY = (this.player.get("y") - dist > 0) ? (this.player.get("y") - dist) : 0;
-
-    let mapXMax = (this.player.get("x") + dist < this.map.length) ? (this.player.get("x") + dist) : this.map.length - 1;
-
-    let mapYMax = (this.player.get("y") + dist < this.map[0].length) ? (this.player.get("y") + dist) : this.map[0].length - 1;
-    
-    for (mapX; mapX < mapXMax; mapX++) {
-      for (mapY; mapY < mapYMax; mapY++) {
-        if (typeof this.map[mapX] !== 'undefined'
-        && typeof this.map[mapX][mapY] !== 'undefined') {
-          
-          if (this.wasSeen[mapX][mapY] === false && this.isSeen[mapX][mapY].visible) {
-            this.wasSeen[mapX][mapY] = true;
-          }
-        }
-      }
+      col = this.player.get("y") - oneWayViewDist;
     }
   },
 
@@ -845,9 +780,23 @@ const GAME = {
     this.map = LEVEL.generate(); 
     this.player = this.initializePlayer;
 
-    const startingCoords = this.getAcceptableCoordinateAsObject();
+    let playerPlacementSuccessful = false;
 
-    this.player.updateCoords(startingCoords.x, startingCoords.y); 
+    while (!playerPlacementSuccessful) {
+
+      const startingCoords = this.getAcceptableCoordinateAsObject();
+
+      if (startingCoords.x - this.player.get("viewDistance") > 0
+      && startingCoords.x + this.player.get("viewDistance") < this.map.length
+      && startingCoords.y - this.player.get("viewDistance") > 0
+      && startingCoords.y + this.player.get("viewDistance") < this.map[0].length) {
+
+       this.player.updateCoords(startingCoords.x, startingCoords.y); 
+    
+       playerPlacementSuccessful = true;
+     }
+   }
+
     this.entityMatrix = this.initializeEntityMatrix();
     
     this.enemies = this.populateEnemies();
