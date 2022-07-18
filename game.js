@@ -563,25 +563,33 @@ const GAME = {
       isWall: false
     });
 
-    /update player location
+    //update player location
     this.viewPoints[dist][dist].visited = true;
     this.viewPoints[dist][dist].visible = true;
  
-    let lvl = 1;
+    let lvl = dist-1;
+      
 
-    while (lvl < dist) {
-      let row, col = dist-lvl;
+    while (lvl > 0) {
+    
+      let mapX = (this.player.get("x") - (dist - lvl) > 0) ? (this.player.get("x") - (dist - level)) : 0;
+      let mapY = (this.player.get("y") - (dist - lvl) > 0) ? (this.player.get("y") - (dist - lvl) : 0;
+      
+      let row, col = lvl;
 
-      for (row; row < dist+lvl+1; row++) {
-        for (col; col < dist+lvl+1; col++) {
+      for (row; row < (this.viewPoints.length - 1 - lvl); row++) {
+        mapX++;
+        for (col; col < (this.viewPoints.length - 1 - lvl); col++) {
+          mapY++;
+          
           let xDir = row < dist ? 1 : -1;
+          let yDir = col < dist ? 1 : -1;
    
           this.viewPoints[row][col].visited = true;
 
           //corners
-          if ((row === dist-lvl || row === dist+lvl)
-          && (col === dist-lvl || col === dist+lvl)) {
-            let yDir = col < dist ? 1 : -1;
+          if ((row === lvl || row === (this.viewPoints.length - 1 - lvl))
+          && (col === dist-lvl || col === (this.viewPoints.length - 1 - lvl))) {
 
             if (this.viewPoints[row + xDir][col + yDir].visible
             && !this.viewPoints[row + xDir][col + yDir].isWall) {
@@ -591,41 +599,45 @@ const GAME = {
             }
 
             //check for walls on map
+            if (this.map[mapX][mapY] === RAWS.map.text.wall) {
+              this.viewPoints[row][col].isWall = true;
+            }
+          } else {
+            if (this.map[mapX][mapY].id !== 'player') {
+              let lineXDir = (row === lvl || row === (this.viewPoints.length - 1 - lvl)) ? xDir : 0;          
+              let lineYDir = (col === lvl || col === (this.viewPoints.length - 1 - lvl)) ? yDir : 0;          
+
+              if (this.viewPoints[row + xLineDir][col + yLineDir].visible
+              && !this.viewPoints[row + xLineDir][col + yLineDir].isWall) {
+              
+                this.viewPoints[row][col].visible = true;
+  
+              }
+  
+              //check for walls on map
+              if (this.map[mapX][mapY] === RAWS.map.text.wall) {
+                this.viewPoints[row][col].isWall = true;
+              }
+            }
           }
-
-
         }
       }
-
-
-      lvl++;
+      lvl--;
     }   
-      //else
-        //if on top or bottom rows
-          //move one toward player on X only
-          //same as above
-        //else
-          //if col 0 or length-1
-            //move one toward player on Y only
-            //same as above
 
-    
-
-
-    row = 0;
-    col = 0;
-
-    for (row; row < this.viewPoints.length; row++) {
-      for (col; col < this.viewPoints[0].length; col++) {
-        if (typeof this.map[row + startingRow] !== 'undefined'
-        && typeof this.map[row + startingRow][col + startingCol] !== 'undefined') {
-          this.isSeen[row + startingRow][col + startingCol] = true;
-          if (this.wasSeen[row + startingRow][col + startingCol] === false) {
-            this.wasSeen[row + startingRow][col + startingRow] = true;
-          }
-        }
-      }
-    }
+      let mapX = (this.player.get("x") - (dist - lvl) > 0) ? (this.player.get("x") - (dist - level)) : 0;
+      let mapY = (this.player.get("y") - (dist - lvl) > 0) ? (this.player.get("y") - (dist - lvl) : 0;
+//    for (mapX; mapX < this.viewPoints.length; row++) {
+//      for (col; col < this.viewPoints[0].length; col++) {
+//        if (typeof this.map[row + startingRow] !== 'undefined'
+//        && typeof this.map[row + startingRow][col + startingCol] !== 'undefined') {
+//          this.isSeen[row + startingRow][col + startingCol] = true;
+//          if (this.wasSeen[row + startingRow][col + startingCol] === false) {
+//            this.wasSeen[row + startingRow][col + startingRow] = true;
+//          }
+//        }
+//      }
+//    }
       
     console.log(this.viewPoints);
   },
