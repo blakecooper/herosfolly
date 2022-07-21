@@ -54,7 +54,8 @@ const RAWS = {
       "floor": "#",
       "wall": "-",
       "exit": "x",
-      "door": "O"
+      "door": "O",
+      "void": "X"
     }
   }, 
   "entities": {

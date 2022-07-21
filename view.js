@@ -178,7 +178,7 @@ const VIEW = {
       let html =
         "<span style='color: " 
         + RAWS.colors[RAWS.dimensions.hp.bgColor] 
-        + ";'>_hp: ";
+        + ";'>&nbsp;hp: ";
 
       html += this.damageSpan();
 
@@ -238,7 +238,6 @@ const VIEW = {
     $("status3").innerHTML = this.statusList[this.statusList.length-3];
     $("status4").innerHTML = this.statusList[this.statusList.length-4];
   
-  //change this to a function that greys out instead of removes the new message
       let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
   },
  
