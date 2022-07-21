@@ -760,15 +760,15 @@ const GAME = {
     }
   },
     startView: function () {
-      setInterval(
-      VIEW.refreshScreen(
-        this.map,
-        this.dimension,
-        this.entityMatrix, 
-        this.player.get("x"), 
-        this.player.get("y")
-      ), 
-      (1000 / RAWS.settings.fps));
+    //  setInterval(
+    //  VIEW.refreshScreen(
+    //    this.map,
+    //    this.dimension,
+    //    this.entityMatrix, 
+    //    this.player.get("x"), 
+    //    this.player.get("y")
+    //  ), 
+    //  (1000 / RAWS.settings.fps));
     
 
     },

@@ -82,9 +82,9 @@ const VIEW = {
           ? y+Math.ceil(this.colsVisible/2) : (RAWS.settings.cols - 1);
       }
   
-      if (endRow === (RAWS.settings.rows-1)) { rowz = RAWS.settings.rows-this.rowsVisible; }
-      if (endCol === (RAWS.settings.cols)) { colz = RAWS.settings.cols-this.colsVisible; }
-      
+    //  if (endRow === (RAWS.settings.rows-1)) { rowz = RAWS.settings.rows-this.rowsVisible; }
+    //  if (endCol === (RAWS.settings.cols)) { colz = RAWS.settings.cols-this.colsVisible; }
+     
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
               if (map[row] !== undefined 
@@ -137,8 +137,8 @@ const VIEW = {
           ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-      if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
-      if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
+    //  if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
+    //  if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
  
       for (let row = rowz; row < endRow; row++) {
         for (let col = colz; col < endCol; col++) {
@@ -148,7 +148,7 @@ const VIEW = {
             html += "<span style='background-color: ";
             
             if (entityMatrix[row][col].id === "door") {
-              html += RAWS.colors[RAWS.dimensions[entityMatrix[row][col]["dimension"]]["bgColor"]];
+                     html += RAWS.colors[RAWS.dimensions[entityMatrix[row][col]["dimension"]]["bgColor"]];
             } else {
               html += this.bodyBackground;
             }
