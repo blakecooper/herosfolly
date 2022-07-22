@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<script src="consts.js"></script>
-<script src="settings.js"></script>
-<script src="symbols.js"></script>
-<script src="utils.js"></script>
-<script src="view.js"></script>
-<script src="player.js"></script>
-<script src="levels.js"></script>
-<script src="stats.js"></script>
-<script src="game.js"></script>
-<link rel='stylesheet' href='style.css'>
-<title>Shards of Maxion</title>
-</head>
-<body id="body">
-<div class="center">
-<div class="map" id="level"></div>
-<div class="map" id="%"></div>
-<div class="map" id="m"></div>
-<div class="map" id="@"></div>
-<div class="map" id="!"></div>
-<div class="map" id="*"></div>
-<div id="stats"></div>
-<div id="status"></div>
-</div>
-<script>game();</script>
-</body>
+ <head>
+  <meta charset="UTF-8">
+  <script src="utils.js"></script>
+  <script src="voronoi.js"></script>
+  <script src="consts.js"></script>
+  <script src="raws.js"></script>
+  <script src="view.js"></script>
+  <script src="controller.js"></script>
+  <script src="entity.js"></script>
+  <script src="levels.js"></script>
+  <script src="game.js"></script>
+  <link rel='stylesheet' href='style.css'>
+  <title>Shards of Maxion</title>
+ </head>
+ <body id="body" onload="GAME.start()">
+   <div id="aboutButton" onclick="VIEW.displayAbout()">[*]</div>
+  <div class="center" id="container">
+   <div id="about"></div>
+   <div class="map" id="level"></div>
+   <div class="map" id="entities"></div>
+   <div class="map" id="hive"></div>
+   <div class="background" id="stats"></div>
+   <div class="background" id="status">
+    <span class="status" id="status4"></span>
+    <br><span class="status" id="status3"></span>
+    <br><span class="status" id="status2"></span>
+    <br><span class="status" id="status1"></span>
+   </div>
+  </div>
+ </body>
 </html> 
