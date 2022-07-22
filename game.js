@@ -154,8 +154,6 @@ const GAME = {
       let numberEnemies = Math.floor(RAWS.settings.base_spawn_rate 
       * enemyTypes[i].spawnRate) * (1 + (this.doorsEntered * .2));
  
-      if (this.voronoiDiagram.cells === 'undefined'
-      || this.voronoiSites.length === 0) {
         for (let j = 0; j < numberEnemies; j++) {
           retArr.push({ 
             ...new Entity(), 
@@ -163,36 +161,7 @@ const GAME = {
             ...this.getAcceptableCoordinateAsObject() 
           });
         }
-      } else {
-        numberEnemies = Math.floor(numberEnemies/this.potionZoneParams.length);
-        for (let j = 0; j < this.potionZoneParams.length; j++) {
-          for (let k = 0; k < numberEnemies; k++) {
-            const enemy = {
-              ...new Entity(),
-              ...RAWS.entities[enemyTypes[i].id],
-              ...this.getAcceptableCoordinateAsObjectWithParams(
-                this.potionZoneParams[j].x1,
-                this.potionZoneParams[j].x2,
-                this.potionZoneParams[j].y1,
-                this.potionZoneParams[j].y2
-              )
-            }
-            if (isInVoronoiCell(
-              enemy.x,
-              enemy.y,
-              this.voronoiSites[j].x,
-              this.voronoiSites[j].y,
-              this.voronoiDiagram)) {
-                if (this.entityMatrix[enemy.x][enemy.y] === null
-                || ((this.entityMatrix[enemy.x][enemy.y].id !== "potion")
-                   &&(this.entityMatrix[enemy.x][enemy.y].id !== "player"))) {
-                  retArr.push(enemy);
-                }
-            }
-          }
-        }
       }
-    }
     return retArr; 
   },
 
@@ -472,7 +441,7 @@ const GAME = {
     //These conditions need to prevent the player from moving 
     //(and also updating the player x and y coordinates incorrectly)
     let monsterPresent = false;
-    let moveDownStairs = false;
+    let moveThruDoor = false;
   
     //Complete player's move based on what's in the proposed move square
     if (this.checkForMonsters(proposedPlayerX,proposedPlayerY)) {
@@ -499,7 +468,7 @@ const GAME = {
       this.entityMatrix[proposedPlayerX][proposedPlayerY] = null;
     }
  
-    if (this.entityMatrix[proposedPlayerX][proposedPlayerY] !== null
+    if (this.entityMatrix[proposedPlayerX][proposedPlayerY] 
     && this.entityMatrix[proposedPlayerX][proposedPlayerY].id === "door") {
       //update dimension
       this.dimension = RAWS.dimensions[this.entityMatrix[proposedPlayerX][proposedPlayerY].dimension];
@@ -509,20 +478,27 @@ const GAME = {
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
       this.map = LEVEL.generate();
+    this.enemies = this.populateEnemies();
+      console.log("Enemies on level: " + this.enemies.length);
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.entityMatrix[this.enemies[i].x][this.enemies[i].y] = this.enemies[i];
+    }    
       this.entityMatrix = this.initializeEntityMatrix();
       this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
+      this.spawnPlayer();
+    this.entityMatrix[this.player.get("x")][this.player.get("y")] = this.player;
       //skip rest of loop
-      moveDownStairs = true;
+      moveThruDoor = true;
     }
  
-    if (!monsterPresent && !moveDownStairs 
-    && this.map[proposedPlayerX][proposedPlayerY] !== RAWS.map.text.wall) {
+    if (!monsterPresent && !moveThruDoor 
+    && this.map[proposedPlayerX][proposedPlayerY] === RAWS.map.text.floor) {
       this.movePlayerTo(proposedPlayerX,proposedPlayerY);
     }
   
     //Check for enemies next to player
     //Those enemies attack, others move toward player
-    if (!moveDownStairs) {
+    if (!moveThruDoor) {
       for (let i = 0; i < this.enemies.length; i++) {
         if (this.enemies[i].x > 0 && this.enemies[i].y > 0 
         && Math.abs(this.player.get("x") - this.enemies[i].x) < 2 
@@ -551,7 +527,7 @@ const GAME = {
 
     this.updateTilesSeenByPlayer(this.player.get("viewDistance"));
 
-    VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
+    //VIEW.refreshScreen(this.map,this.dimension,this.entityMatrix,this.player.get("x"),this.player.get("y"));
   },
   viewPoints: [],
 
@@ -600,7 +576,15 @@ const GAME = {
               symbol: "O"
           };
 
-          if (door.x !== this.player.get("x") && door.y !== this.player.get("y")) {
+          if (this.entityMatrix[door.x][door.y] === null
+          || (!(door.x === this.player.get("x") && door.y === this.player.get("y"))
+          && (this.entityMatrix[door.x][door.y].id !== "potion"))) {
+            
+            if (this.entityMatrix[door.x][door.y]
+            && this.entityMatrix[door.x][door.y].isMonstrous) {
+              this.relocateMonsterAtIdx(this.getEnemyAt(door.x, door.y));
+            }
+              
             this.entityMatrix[door.x][door.y] = door;
           }  
         } 
@@ -660,8 +644,8 @@ const GAME = {
   }, 
 
   noEntitiesOnSquare: function (checkX, checkY) {
-    if (entityMatrix[checkX] !== undefined 
-    && entityMatrix[checkX][checkY] !== null) {
+    if (this.entityMatrix[checkX] !== undefined 
+    && this.entityMatrix[checkX][checkY] !== null) {
       return false;
     }
     return true;
@@ -744,42 +728,35 @@ const GAME = {
     let acceptablePlacement = false;
   
     while (!acceptablePlacement) {
-      let x = getRandomCoordinate(RAWS.settings.rows);
-      let y = getRandomCoordinate(RAWS.settings.cols);
+      let x = this.getRandomCoordinate(RAWS.settings.rows);
+      let y = this.getRandomCoordinate(RAWS.settings.cols);
   
       if (this.map[x][y] === RAWS.map.text.floor 
-      && noEntitiesOnSquare(x, y)) {
-        entityMatrix[enemies[i].x][enemies[i].y] = null;
+      && this.noEntitiesOnSquare(x, y)) {
+        this.entityMatrix[this.enemies[i].x][this.enemies[i].y] = null;
   
-        enemies[i].x = x;
-        enemies[i].y = y;
+        this.enemies[i].x = x;
+        this.enemies[i].y = y;
   
-        entityMatrix[x][x] = enemies[i];
+        this.entityMatrix[x][x] = this.enemies[i];
         acceptablePlacement = true;
       }
     }
   },
     startView: function () {
-      setInterval(
-      VIEW.refreshScreen(
-        this.map,
-        this.dimension,
-        this.entityMatrix, 
-        this.player.get("x"), 
-        this.player.get("y")
-      ), 
+      let interval = setInterval(function() {
+        VIEW.refreshScreen( 
+        GAME.map,
+        GAME.dimension,
+        GAME.entityMatrix, 
+        GAME.player.get("x"), 
+        GAME.player.get("y"))}, 
       (1000 / RAWS.settings.fps));
-    
+     console.log(interval);
 
     },
-  start: async function () {
 
-    //TODO: add this back in after new VIEW is complete
-    //checkForMobileDevice();
-
-    this.map = LEVEL.generate(); 
-    this.player = this.initializePlayer;
-
+  spawnPlayer: function() {
     let playerPlacementSuccessful = false;
 
     while (!playerPlacementSuccessful) {
@@ -796,6 +773,18 @@ const GAME = {
        playerPlacementSuccessful = true;
      }
    }
+  },
+
+
+  start: async function () {
+
+    //TODO: add this back in after new VIEW is complete
+    //checkForMobileDevice();
+
+    this.map = LEVEL.generate(); 
+    this.player = this.initializePlayer;
+
+    this.spawnPlayer(); 
 
     this.entityMatrix = this.initializeEntityMatrix();
     
