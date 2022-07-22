@@ -67,6 +67,7 @@ body {
 }
 
 #aboutButton {
+    background-color: black;
     color: yellow;
     position: absolute;
     top: 2%;
