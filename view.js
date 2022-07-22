@@ -5,6 +5,7 @@ const VIEW = {
 
   "aboutDisplayed": false,
 
+
   "displayAbout": function () {
     console.log("clicked about");
     if (this.aboutDisplayed) {
