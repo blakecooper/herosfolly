@@ -3,6 +3,30 @@ const VIEW = {
   
   "buffer": 125,
 
+  "aboutDisplayed": false,
+
+  "displayAbout": function () {
+    console.log("clicked about");
+    if (this.aboutDisplayed) {
+      $("about").style = "display: none;";
+      this.aboutDisplayed = false;
+    } else {
+      let html = 
+        "<p>" + this.TITLE +
+        "<p>" + this.COPYRIGHT + 
+        "<p>" + this.INSTRUCTIONS +
+        "<p>" + this.LICENSE;
+
+      $("about").innerHTML = html;
+
+      $("about").style = "display: inline;";
+      this.aboutDisplayed = true;
+    }
+  },
+  "TITLE": "Shards of Maxion",
+  "COPYRIGHT": "Copyright (c) 2022 Blake Cooper",
+  "INSTRUCTIONS": "Collect <span style='color: " + RAWS.entities.shard.render.color + ";'>" + RAWS.entities.shard.render.symbol + "</span> to open doors and improve your score<br>Collect <span style='color: " + RAWS.dimensions.hp.bgColor + ";'>" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.atk.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.def.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span> to increase your stats<br>Collect <span style='color: " + RAWS.entities.restore.render.color + ";'>" + RAWS.entities.restore.render.symbol + "</span> to restore health<br>Avoid (or fight) <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.minion.render.symbol + "</span> and <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.maxion.render.symbol + "</span>",
+  "LICENSE": "<p class='block'>Licensed under The MIT License:<br> http://en.wikipedia.org/wiki/MIT_License</p><p class='block'>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p><p class='block'>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p><p class='block'>THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
   "clearStatus": function () {
       $("status1").style = "color: grey;";
   },

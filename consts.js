@@ -17,5 +17,5 @@ const CONSTS = {
   "POTIONS_EVERY": 5,
   "SPACE": "&nbsp",
   "BACKGROUND": 0,
-  "TEXT": 1
+  "TEXT": 1,
 }
