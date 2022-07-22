@@ -111,13 +111,13 @@ const VIEW = {
      
       for (let row = rowz; row < endRow; row++) {
           for (let col = colz; col < endCol; col++) {
-              if (map[row] !== undefined 
-              && map[row][col] !== null
+              if (map.rowsAreDefined 
+              && map.at(row,col) !== null
               && GAME.wasSeen[row][col]) {
 //                  if (GAME.isSeen[row][col]) {
 //                    html += "<span style='opacity: " + RAWS.settings.is_seen_opacity + ";'>";
 //                  }
-                  html += map[row][col];
+                  html += map.at(row,col);
 //                  if (GAME.isSeen[row][col]) {
 //                    html += "</span>";
 //                  }
@@ -166,20 +166,20 @@ const VIEW = {
  
       for (let row = rowz; row < endRow; row++) {
         for (let col = colz; col < endCol; col++) {
-          if (entityMatrix[row] !== undefined
-          && entityMatrix[row][col] !== null
+          if (!entityMatrix.rowDefined(row)
+          && !entityMatrix.isNullAt(row,col)
           && GAME.wasSeen[row][col]) {
             html += "<span style='background-color: ";
             
-            if (entityMatrix[row][col].id === "door") {
-                     html += RAWS.colors[RAWS.dimensions[entityMatrix[row][col]["dimension"]]["bgColor"]];
+            if (entityMatrix.getIdAt(row, col) === "door") {
+                     html += RAWS.colors[RAWS.dimensions[entityMatrix.getDimensionOfDoorAt(row, col)]["bgColor"]];
             } else {
               html += this.bodyBackground;
             }
 
-		    if (entityMatrix[row][col].isPlayer === undefined) {
-                      html += "; color: " + RAWS.colors[entityMatrix[row][col].render.color] + "'>";
-                      html += entityMatrix[row][col].render.symbol;
+		    if (entityMatrix.getPlayerAt(row,col) === undefined) {
+                      html += "; color: " + RAWS.colors[entityMatrix.getRenderDataAt(row, col).color] + "'>";
+                      html += entityMatrix.getRenderDataAt(row,col).symbol;
                       html += "</span>";
                     } else {
                       const render = GAME.player.get("render");
