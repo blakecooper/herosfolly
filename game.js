@@ -857,8 +857,7 @@ const GAME = {
 
   start: async function () {
 
-    //TODO: add this back in after new VIEW is complete
-    //checkForMobileDevice();
+    VIEW.checkForMobileDevice();
 
     this.map = this.initializeMap; 
     this.player = this.initializePlayer;
