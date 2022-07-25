@@ -7,12 +7,12 @@ const VIEW = {
 
 
   "displayAbout": function () {
-    console.log("clicked about");
     if (this.aboutDisplayed) {
       $("about").style = "display: none;";
       this.aboutDisplayed = false;
     } else {
       let html = 
+            "<p>&nbsp<p>&nbsp<p>&nbsp" + 
         "<p>" + this.TITLE +
         "<p>" + this.COPYRIGHT + 
         "<p>" + this.INSTRUCTIONS +

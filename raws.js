@@ -16,7 +16,7 @@ const RAWS = {
     "min_room_size": 4,
     "max_room_size": 9,
     "rows": 128,
-    "cols": 320,
+    "cols": 256,
     "potions_per_level": 24,
     "default_font_size": 1.5,
     "base_spawn_rate": 600,

@@ -1,6 +1,8 @@
 const GAME = {
   acceptableLoopTimeout: 0,
 
+  entityMatrixLocked: false,
+
   wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
 
   isSeen: [],
@@ -32,7 +34,6 @@ const GAME = {
         defender.hp -= dmgToDefender;
   
         if (defender.hp < 1) {
-          let type = defender.id;
     
           this.entityMatrix.makeNullAt(defender.x, defender.y);
           defender.x = -1;
@@ -210,6 +211,8 @@ const GAME = {
 
   initializeEntityMatrix: (function () {
     const e = initializeMatrix(RAWS.settings.rows,RAWS.settings.cols,null);
+    console.log("New entity matrix initialized!");
+    console.log(e);
 
     return {
       isNullAt: function (x, y) {
@@ -282,6 +285,7 @@ const GAME = {
   	  });
         }
       }
+
     }
 
     let voronoi = new Voronoi();
@@ -509,12 +513,17 @@ const GAME = {
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
       this.map = this.initializeMap;
-    this.enemies = this.populateEnemies();
-      console.log("Enemies on level: " + this.enemies.length);
-    for (let i = 0; i < this.enemies.length; i++) {
-      this.entityMatrix.placeAt(this.enemies[i].x,this.enemies[i].y, this.enemies[i]);
-    }    
+      this.enemies = [];
       this.entityMatrix = this.initializeEntityMatrix;
+
+      this.placeEntitiesOnMap();
+  
+//      this.enemies = this.populateEnemies();
+//      console.log(this.enemies);
+//      for (let i = 0; i < this.enemies.length; i++) {
+//        this.entityMatrix.placeAt(this.enemies[i].x,this.enemies[i].y, this.enemies[i]);
+//      }    
+   
       this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
       this.spawnPlayer();
     this.entityMatrix.placeAt(this.player.get("x"), this.player.get("y"), this.player);
@@ -808,7 +817,6 @@ const GAME = {
         GAME.player.get("x"), 
         GAME.player.get("y"))}, 
       (1000 / RAWS.settings.fps));
-     console.log(interval);
 
     },
 
@@ -850,7 +858,12 @@ const GAME = {
 
     this.spawnPlayer(); 
 
-    this.entityMatrix = this.initializeEntityMatrix;
+//    let promise = new Promise((resolve, reject) => {
+        this.entityMatrix = this.initializeEntityMatrix;
+//    });
+    
+//    await promise;
+
     this.placeEntitiesOnMap();
   
     this.enemies = this.populateEnemies();
