@@ -1,6 +1,8 @@
 const GAME = {
   acceptableLoopTimeout: 0,
 
+  entityMatrixLocked: false,
+
   wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
 
   isSeen: [],
@@ -32,7 +34,6 @@ const GAME = {
         defender.hp -= dmgToDefender;
   
         if (defender.hp < 1) {
-          let type = defender.id;
     
           this.entityMatrix.makeNullAt(defender.x, defender.y);
           defender.x = -1;
@@ -209,7 +210,9 @@ const GAME = {
   entityMatrix: [],
 
   initializeEntityMatrix: (function () {
-    const e = initializeMatrix(RAWS.settings.rows,RAWS.settings.cols,null);
+    let e = initializeMatrix(RAWS.settings.rows,RAWS.settings.cols,null);
+    console.log("New entity matrix initialized!");
+    console.log(e);
 
     return {
       isNullAt: function (x, y) {
@@ -241,6 +244,9 @@ const GAME = {
       getRenderDataAt: function (x, y) {
         return e[x][y].render;
       },
+      clear: function () {
+        e = initializeMatrix(RAWS.settings.rows,RAWS.settings.cols,null);
+      }
     };
   })(),
 
@@ -282,6 +288,7 @@ const GAME = {
   	  });
         }
       }
+
     }
 
     let voronoi = new Voronoi();
@@ -356,6 +363,12 @@ const GAME = {
   
       this.entityMatrix.placeAt(restore.x,restore.y,restore);
     }
+    
+    for (let i = 0; i < this.enemies.length; i++) {
+      this.entityMatrix.placeAt(this.enemies[i].x,this.enemies[i].y, this.enemies[i]);
+    }    
+   
+  
 },
   
   getAcceptableCoordinateAsObjectWithParams: function (x1, x2, y1, y2) {
@@ -508,16 +521,14 @@ const GAME = {
       this.doorsNotAppeared = true;
       this.shardsCollectedOnLevel = 0;
       //re-initialize entityMatrix
-      this.map = this.initializeMap;
-    this.enemies = this.populateEnemies();
-      console.log("Enemies on level: " + this.enemies.length);
-    for (let i = 0; i < this.enemies.length; i++) {
-      this.entityMatrix.placeAt(this.enemies[i].x,this.enemies[i].y, this.enemies[i]);
-    }    
-      this.entityMatrix = this.initializeEntityMatrix;
+      this.map.generate();
+      this.enemies = this.populateEnemies();
+
+      this.entityMatrix.clear();
+      this.placeEntitiesOnMap();
+   
       this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
       this.spawnPlayer();
-    this.entityMatrix.placeAt(this.player.get("x"), this.player.get("y"), this.player);
       //skip rest of loop
       moveThruDoor = true;
     }
@@ -748,7 +759,7 @@ const GAME = {
   })(),
 
   initializeMap: (function() {
-    const m = LEVEL.generate();
+    let m = LEVEL.generate();
 
     return {
       at: function (x, y) {
@@ -769,6 +780,9 @@ const GAME = {
       },
       rowsAreDefined: function () {
         return typeof m[0] !== 'undefined';
+      },
+      generate: function () {
+        m = LEVEL.generate();
       }
     };
   })(),
@@ -808,7 +822,6 @@ const GAME = {
         GAME.player.get("x"), 
         GAME.player.get("y"))}, 
       (1000 / RAWS.settings.fps));
-     console.log(interval);
 
     },
 
@@ -836,6 +849,8 @@ const GAME = {
 
    if (!playerPlacementSuccessful) {
      console.log("Critical error: could not place player!");
+   } else {
+    this.entityMatrix.placeAt(this.player.get("x"), this.player.get("y"), this.player);
    }
   },
 
@@ -847,20 +862,16 @@ const GAME = {
 
     this.map = this.initializeMap; 
     this.player = this.initializePlayer;
+    this.enemies = this.populateEnemies();
+
+    this.entityMatrix = this.initializeEntityMatrix;
+    this.entityMatrix.clear();
+    this.placeEntitiesOnMap();
 
     this.spawnPlayer(); 
 
-    this.entityMatrix = this.initializeEntityMatrix;
-    this.placeEntitiesOnMap();
   
-    this.enemies = this.populateEnemies();
 
-    for (let i = 0; i < this.enemies.length; i++) {
-      this.entityMatrix.placeAt(this.enemies[i].x,this.enemies[i].y, this.enemies[i]);
-    }    
-   
-    this.entityMatrix.placeAt(this.player.get("x"), this.player.get("y"), this.player);
-  
     this.updateTilesSeenByPlayer(this.player.get("viewDistance"));  
   
     this.highscore = this.getHighScores(); 

@@ -41,7 +41,6 @@ function initializeMatrix(rows, cols, character) {
             matrix[row].push(character);
         }
     }
-
     return matrix;
 }
 
