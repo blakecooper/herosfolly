@@ -1,47 +1,35 @@
 const GAME = {
-  acceptableLoopTimeout: 0,
-
-  entityMatrixLocked: false,
-
-  wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
-
-  isSeen: [],
-
-  voronoiDiagram: {},
-
-  doorsEntered: 0,
-
-  shardsCollectedOnLevel: 0,
-
-  potionsCollected: 0,
 
   dimension: RAWS.dimensions.hp,
+  doorsEntered: 0,
+  isSeen: [],
+  potionsCollected: 0,
+  despawnEnemyAt: function(x, y) {
+    this.entityMatrix.despawnEntityAt(x,y);
+      this.enemies[this.getEnemyAt(x,y)].x = -1;
+    this.enemies[this.getEnemyAt(x,y)].y = -1;
+  },
 
-  playerAttack: function (defender) {
+  playerAttacks: function (defender) {
     if (defender.canFight()) {
+      
+      const totalDefense = (defender.def
+      * (1 + this.doorsEntered * .2))           //buff enemies more in successive dimensions
+      + (this.dimension.id === "def" ? 1 : 0);  //+1 to enemies in def dimensions 
 
-      const dimensionFactor = 1 + (this.doorsEntered * .2);
-  
-      let dimDefBuff = this.dimension.id === "def" ? 1 : 0;
-
-      let atkRoll = random(20);
+      const totalAttack = random(20)
+      + (this.player.get("atk") - RAWS.entities.player.atk); //roll d20, add atk - base atk
    
-      let defenderHit = atkRoll > ((defender.def * dimensionFactor) + dimDefBuff);
-      if (defenderHit) {
-        let dmgToDefender = Math.floor(this.player.get("atk")/2) 
-        + random(Math.ceil(this.player.get("atk")/2));
+      if (totalAttack > totalDefense) {
+        const damage = Math.floor(this.player.get("atk")/2) //half of damage is guaranteed  
+        + random(Math.ceil(this.player.get("atk")/2));      //other half is random
         
-        defender.hp -= dmgToDefender;
+        defender.hp -= damage;
   
         if (defender.hp < 1) {
+          this.despawnEnemyAt(defender.x, defender.y); 
     
-          this.entityMatrix.makeNullAt(defender.x, defender.y);
-          defender.x = -1;
-          defender.y = -1;
-    
-          if (random(2)) {
-            this.player.lucky();
-          }
+          if (random(2)) { this.player.lucky(); } //50% chance of lucky effect on victory
     
           for (let i = 0; i < defender.shards; i++) {
             this.player.picksUp("shard");     
@@ -56,6 +44,15 @@ const GAME = {
       return true;
     }
   },
+  shardsCollectedOnLevel: 0,
+  voronoiDiagram: {},
+
+  wasSeen: initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false),
+
+
+
+
+
 
   monsterAttack: function (attacker) {
  
@@ -218,7 +215,7 @@ const GAME = {
       isNullAt: function (x, y) {
         return e[x][y] === null;
       },
-      makeNullAt: function (x, y) {
+      despawnEntityAt: function (x, y) {
         e[x][y] = null;
       },
       getIdAt: function (x, y) {
@@ -489,27 +486,27 @@ const GAME = {
   
     //Complete player's move based on what's in the proposed move square
     if (this.checkForMonsters(proposedPlayerX,proposedPlayerY)) {
-      monsterPresent = this.playerAttack(
+      monsterPresent = this.playerAttacks(
         this.enemies[this.getEnemyAt(proposedPlayerX,proposedPlayerY)]
       );
     }
   
     if (!monsterPresent 
     && this.checkForShards(proposedPlayerX,proposedPlayerY)) {
-      this.entityMatrix.makeNullAt(proposedPlayerX, proposedPlayerY);
+      this.entityMatrix.despawnEntityAt(proposedPlayerX, proposedPlayerY);
       this.pickupShard(this.player);
     }
   
     if (!monsterPresent 
     && this.checkForPotions(proposedPlayerX,proposedPlayerY)){
       this.pickupPotion();
-      this.entityMatrix.makeNullAt(proposedPlayerX, proposedPlayerY);
+      this.entityMatrix.despawnEntityAt(proposedPlayerX, proposedPlayerY);
     }
   
     if (!monsterPresent && 
     this.checkForBuffs(proposedPlayerX, proposedPlayerY)) {
       this.pickupBuff();
-      this.entityMatrix.makeNullAt(proposedPlayerX, proposedPlayerY);
+      this.entityMatrix.despawnEntityAt(proposedPlayerX, proposedPlayerY);
     }
  
     if (!this.entityMatrix.isNullAt(proposedPlayerX,proposedPlayerY) 
@@ -662,7 +659,7 @@ const GAME = {
   },
 
   movePlayerTo: function (x,y) {
-    this.entityMatrix.makeNullAt(this.player.get("x"),this.player.get("y"));
+    this.entityMatrix.despawnEntityAt(this.player.get("x"),this.player.get("y"));
     this.entityMatrix.placeAt(x,y, this.player);
     this.player.updateCoords(x, y);
   },
@@ -672,7 +669,7 @@ const GAME = {
     && this.map.at(x,y) === RAWS.map.text.floor 
     && (this.entityMatrix.isNullAt(x,y) 
         || this.entityMatrix.getIdAt(x,y) === "shard")) {
-      this.entityMatrix.makeNullAt(this.enemies[idx].x,this.enemies[idx].y);
+      this.entityMatrix.despawnEntityAt(this.enemies[idx].x,this.enemies[idx].y);
 	  if (this.checkForShards(x,y)) {
 	    this.enemies[idx].shards++;
 	  }
@@ -803,7 +800,7 @@ const GAME = {
   
       if (this.map.at(x,y) === RAWS.map.text.floor 
       && this.noEntitiesOnSquare(x, y)) {
-        this.entityMatrix.makeNullAt(this.enemies[i].x,this.enemies[i].y);
+        this.entityMatrix.despawnEntityAt(this.enemies[i].x,this.enemies[i].y);
   
         this.enemies[i].x = x;
         this.enemies[i].y = y;
