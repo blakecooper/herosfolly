@@ -12,6 +12,18 @@ body {
     touch-action: none;
 }
 
+#mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}
 .yellow {
     color: yellow;
 }
@@ -74,7 +86,7 @@ body {
     position: absolute;
     top: 2%;
     right: 2%;
-    z-index:2;
+    z-index:3;
 }
 
 #about {
@@ -88,8 +100,7 @@ body {
     width:100%;
     
     font-size: .5em;
-    background-color: black;
-    z-index: 1;
+    z-index: 2;
 }
 
 .block {

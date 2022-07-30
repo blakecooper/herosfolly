@@ -1,16 +1,21 @@
 const VIEW = {
+  "setMaskOpacity": function (a) {
+    $("mask").style="opacity: " + a + ";";
+  },
+
   "bodyBackground": "black",
   
   "buffer": 125,
 
   "aboutDisplayed": false,
 
-
   "displayAbout": function () {
+    this.setMaskOpacity(0);
     if (this.aboutDisplayed) {
       $("about").style = "display: none;";
       this.aboutDisplayed = false;
     } else {
+      this.setMaskOpacity(.6);
       let html = 
             "<p>&nbsp<p>&nbsp<p>&nbsp" + 
         "<p>" + this.TITLE +

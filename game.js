@@ -473,17 +473,17 @@ const GAME = {
       this.pickupRestore();
     }
 
-    if (!monsterPresent && !doorPresent) {		//despawn any entities
-      this.entityMatrix.despawnEntityAt(		//picked up by player
-        proposedMove.x, 
-        proposedMove.y); 
-    } 
- 
     if (!this.entityMatrix.isNullAt(proposedMove.x,proposedMove.y)	//move through door 
     && this.entityMatrix.getIdAt(proposedMove.x,proposedMove.y) === "door") {
       this.newDimensionFrom(proposedMove.x, proposedMove.y);
       doorPresent = true;
     }
+    
+    if (!monsterPresent && !doorPresent) {		//despawn any entities
+      this.entityMatrix.despawnEntityAt(		//picked up by player
+        proposedMove.x, 
+        proposedMove.y); 
+    } 
  
     if (!monsterPresent && !doorPresent	 		//else, move one square
     && this.map.at(proposedMove.x,proposedMove.y) 
@@ -787,7 +787,7 @@ const GAME = {
           if (random(2)) { this.player.lucky(); } //50% chance of lucky effect on victory
     
           for (let i = 0; i < defender.shards; i++) {
-            this.player.picksUp("shards"); //player picks up defenders shards     
+            this.pickupShard(this.player); //player picks up defenders shards     
           }
     
           return false;
@@ -903,6 +903,7 @@ const GAME = {
      }	
     }
     
+    VIEW.setMaskOpacity(.6);
     this.maybeUpdateHighScores();
     
     let endString = "You died. ";
