@@ -1,41 +1,9 @@
 const VIEW = {
-  "setMaskOpacity": function (a) {
-    $("mask").style="opacity: " + a + ";";
-  },
-
-  "bodyBackground": "black",
-  
-  "buffer": 125,
-
   "aboutDisplayed": false,
 
-  "displayAbout": function () {
-    this.setMaskOpacity(0);
-    if (this.aboutDisplayed) {
-      $("about").style = "display: none;";
-      this.aboutDisplayed = false;
-    } else {
-      this.setMaskOpacity(.6);
-      let html = 
-            "<p>&nbsp<p>&nbsp<p>&nbsp" + 
-        "<p>" + this.TITLE +
-        "<p>" + this.COPYRIGHT + 
-        "<p>" + this.INSTRUCTIONS +
-        "<p>" + this.LICENSE;
+  "bodyBackgroundColor": "black",
 
-      $("about").innerHTML = html;
-
-      $("about").style = "display: inline;";
-      this.aboutDisplayed = true;
-    }
-  },
-  "TITLE": "Shards of Maxion",
-  "COPYRIGHT": "Copyright (c) 2022 Blake Cooper",
-  "INSTRUCTIONS": "Collect <span style='color: " + RAWS.entities.shard.render.color + ";'>" + RAWS.entities.shard.render.symbol + "</span> to open doors and improve your score<br>Collect <span style='color: " + RAWS.dimensions.hp.bgColor + ";'>" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.atk.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.def.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span> to increase your stats<br>Collect <span style='color: " + RAWS.entities.restore.render.color + ";'>" + RAWS.entities.restore.render.symbol + "</span> to restore health<br>Avoid (or fight) <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.minion.render.symbol + "</span> and <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.maxion.render.symbol + "</span>",
-  "LICENSE": "<p class='block'>Licensed under The MIT License:<br> http://en.wikipedia.org/wiki/MIT_License</p><p class='block'>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the 'Software'), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p><p class='block'>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p><p class='block'>THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.",
-  "clearStatus": function () {
-      $("status1").style = "color: grey;";
-  },
+  "copyright": "Copyright (c) 2022 Blake Cooper",
 
   "checkForMobileDevice": function () {
     window.addEventListener("load", () => {
@@ -47,11 +15,9 @@ const VIEW = {
   },
 
   "closeSpan": function () {
-    if (GAME.player.get("hp") < GAME.player.get("base_hp")) {
-      return "</span>";
-    } else {
-      return "";
-    }
+      return (GAME.player.get("hp") < GAME.player.get("base_hp")) 
+      ? "</span>" 
+      : "";
   },
 
   "colsVisible": -1,
@@ -69,54 +35,74 @@ const VIEW = {
               html += "yellow";
           }
   
-          html += ">";
-  
+          html += ">"; 
       }
-      
       return html;
   },
-  
-  "refreshScreen": function (map, dimension, entities, x, y) {
-      if (this.rowVisible === -1 || this.colsVisible === -1) {
-        this.setDisplaySize();
-      };
-      this.drawMap(map, dimension, x, y);
-      this.drawStats();
-      this.draw(entities, x, y);
+
+  "displayAbout": function () {
+    if (GAME.play) {
+      this.setMaskOpacity(0);
+    }
+
+    if (this.aboutDisplayed) {
+      $("about").style = "display: none;";
+      this.aboutDisplayed = false;
+    } else {
+      if (GAME.play) {
+        this.setMaskOpacity(this.maskOpacity);
+      }
+
+      let html = 
+            "<p>&nbsp<p>&nbsp<p>&nbsp" + 
+        "<p>" + this.title +
+        "<p>" + this.copyright + 
+        "<p>" + this.instructions +
+        "<p>" + this.license;
+
+      $("about").innerHTML = html;
+      $("about").style = "display: inline;";
+      this.aboutDisplayed = true;
+    }
   },
+
+  "mapDisplay": {
+    "row": -1,
+    "rowMax": -1,
+    "col": -1,
+    "colMax": -1,
+  },
+
+  "setMapDisplay": function (x, y) {
+    this.mapDisplay.row = (x - Math.floor(this.rowsVisible/2)) > 0 
+    ? x-Math.floor(this.rowsVisible/2) : 0;
+      
+    this.mapDisplay.col = (y - Math.floor(this.colsVisible/2)) > 0
+    ? y-Math.floor(this.colsVisible/2) : 0;
   
-  "drawMap": function (map, dimension, x, y) {
+    if (this.mapDisplay.row === 0) { 
+        this.mapDisplay.rowMax = this.rowsVisible; 
+    } else {
+        this.mapDisplay.rowMax = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+        ? x+Math.ceil(this.rowsVisible/2) :  (RAWS.settings.rows - 1);
+    }
+      
+    if (this.mapDisplay.col === 0) { 
+        this.mapDisplay.colMax = this.colsVisible; 
+    } else {
+        this.mapDisplay.colMax = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+        ? y+Math.ceil(this.colsVisible/2) : (RAWS.settings.cols - 1);
+    }
+  },
+
+  "drawMap": function (map, dimension) {
       $("level").innerHTML = "";
-	let html = "<span style='color: " + RAWS.colors[dimension.bgColor] + ";'>";
-  
-      let rowz = (x - Math.floor(this.rowsVisible/2)) > 0 
-      ? x-Math.floor(this.rowsVisible/2) : 0;
-      
-      let colz = (y - Math.floor(this.colsVisible/2)) > 0
-      ? y-Math.floor(this.colsVisible/2) : 0;
-  
-      let endRow;
-      let endCol;
-  
-      if (rowz === 0) { 
-          endRow = this.rowsVisible; 
-      } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
-          ? x+Math.ceil(this.rowsVisible/2) :  (RAWS.settings.rows - 1);
-      }
-      
-      if (colz === 0) { 
-          endCol = this.colsVisible; 
-      } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
-          ? y+Math.ceil(this.colsVisible/2) : (RAWS.settings.cols - 1);
-      }
-  
-    //  if (endRow === (RAWS.settings.rows-1)) { rowz = RAWS.settings.rows-this.rowsVisible; }
-    //  if (endCol === (RAWS.settings.cols)) { colz = RAWS.settings.cols-this.colsVisible; }
-     
-      for (let row = rowz; row < endRow; row++) {
-          for (let col = colz; col < endCol; col++) {
+	
+      let html = "<span style='color: " 
+      + RAWS.colors[dimension.bgColor] + ";'>";
+
+      for (let row = this.mapDisplay.row; row < this.mapDisplay.rowMax; row++) {
+          for (let col = this.mapDisplay.col; col < this.mapDisplay.colMax; col++) {
               if (map.rowsAreDefined 
               && map.at(row,col) !== null
               && GAME.wasSeen[row][col]) {
@@ -138,40 +124,71 @@ const VIEW = {
       html += "</span>";
       $("level").innerHTML = html;
   },
+  "greyLastStatus": function () {
+      $("status1").style = "color: grey;";
+  },
+
+  "instructions": "Collect <span style='color: " + RAWS.entities.shard.render.color + ";'>" + RAWS.entities.shard.render.symbol + "</span> to open doors and improve your score<br>Collect <span style='color: " + RAWS.dimensions.hp.bgColor + ";'>" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.atk.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span><span style='color: " + RAWS.dimensions.def.bgColor + ";'>&nbsp" + RAWS.entities.potion.render.symbol + "</span> to increase your stats<br>Collect <span style='color: " + RAWS.entities.restore.render.color + ";'>" + RAWS.entities.restore.render.symbol + "</span> to restore health<br>Avoid (or fight) <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.minion.render.symbol + "</span> and <span style='color: " + RAWS.dimensions.atk.bgColor + ";'>" + RAWS.entities.maxion.render.symbol + "</span>",
+
+  "license": "<p class>Licensed under The MIT License:<br> http://en.wikipedia.org/wiki/MIT_License</p>",
+
+  "maskOpacity": .6, 
+
+  "refreshScreen": function (map, dimension, entities, x, y) {
+      if (this.rowVisible === -1 || this.colsVisible === -1) {
+        this.setDisplaySize();
+      };
+
+      //TODO: improve performance with boolean to update when required.
+      this.setMapDisplay(x, y);
+      
+      this.drawMap(map, dimension);
+      this.draw(entities, x, y);
+      this.drawStats();
+  },
+
+  "setMaskOpacity": function (a) {
+    $("mask").style="opacity: " + a + ";";
+  },
+
+  "title": "Shards of Maxion",
+
+  
+  
   
   "draw": function (entityMatrix, x, y) {
       $("entities").innerHTML = "";
   
       let html = "";
   
-      let rowz = (x - Math.floor(this.rowsVisible/2)) > 0 
+      let firstDisplayRow = (x - Math.floor(this.rowsVisible/2)) > 0 
       ? x-Math.floor(this.rowsVisible/2) : 0;
       
-      let colz = (y - Math.floor(this.colsVisible/2)) > 0 
+      let firstDisplayCol = (y - Math.floor(this.colsVisible/2)) > 0 
       ? y-Math.floor(this.colsVisible/2) : 0;
   
-      let endRow;
-      let endCol;
+      let lastDisplayRow;
+      let lastDisplayCol;
   
-      if (rowz === 0) { 
-          endRow = this.rowsVisible; 
+      if (firstDisplayRow === 0) { 
+          lastDisplayRow = this.rowsVisible; 
       } else {
-          endRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
+          lastDisplayRow = (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
           ? x+Math.ceil(this.rowsVisible/2) :  RAWS.settings.rows;
       }
       
-      if (colz === 0) { 
-          endCol = this.colsVisible; 
+      if (firstDisplayCol === 0) { 
+          lastDisplayCol = this.colsVisible; 
       } else {
-          endCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
+          lastDisplayCol = (y + Math.ceil(this.colsVisible/2)) < RAWS.settings.cols 
           ? y+Math.ceil(this.colsVisible/2) : RAWS.settings.cols;
       }
   
-    //  if (endRow === RAWS.settings.rows) { rowz = RAWS.settings.rows-this.rowsVisible; }
-    //  if (endCol === RAWS.settings.cols) { colz = RAWS.settings.cols-this.colsVisible; }
+    //  if (lastDisplayRow === RAWS.settings.rows) { firstDisplayRow = RAWS.settings.rows-this.rowsVisible; }
+    //  if (lastDisplayCol === RAWS.settings.cols) { firstDisplayCol = RAWS.settings.cols-this.colsVisible; }
  
-      for (let row = rowz; row < endRow; row++) {
-        for (let col = colz; col < endCol; col++) {
+      for (let row = firstDisplayRow; row < lastDisplayRow; row++) {
+        for (let col = firstDisplayCol; col < lastDisplayCol; col++) {
           if (!entityMatrix.rowDefined(row)
           && !entityMatrix.isNullAt(row,col)
           && GAME.wasSeen[row][col]) {
@@ -180,7 +197,7 @@ const VIEW = {
             if (entityMatrix.getIdAt(row, col) === "door") {
                      html += RAWS.colors[RAWS.dimensions[entityMatrix.getDimensionOfDoorAt(row, col)]["bgColor"]];
             } else {
-              html += this.bodyBackground;
+              html += this.bodyBackgroundColor;
             }
 
 		    if (entityMatrix.getPlayerAt(row,col) === undefined) {
@@ -268,7 +285,7 @@ const VIEW = {
     $("status3").innerHTML = this.statusList[this.statusList.length-3];
     $("status4").innerHTML = this.statusList[this.statusList.length-4];
   
-      let timeout = setTimeout(this.clearStatus, 1000 * RAWS.settings.seconds_display_status);
+      let timeout = setTimeout(this.greyLastStatus, 1000 * RAWS.settings.seconds_display_status);
   },
  
   "rowsVisible": -1,
@@ -281,6 +298,12 @@ const VIEW = {
     let screenWidth = window.innerWidth;
     let screenHeight = window.innerHeight;
 
+    //add margins if browser window is wide
+//    if (screenWidth > 1000) {
+//        $("container").style="margin-left: 300px;margin-right: 300px;";
+//        $("aboutButton").style="margin-left: 300px;margin-right: 300px;";
+//    }
+    
     //TODO: more efficient way to do the following?
     let origFont = window.getComputedStyle(document.body).getPropertyValue('font-size');
     let idx = 0;
@@ -302,28 +325,11 @@ const VIEW = {
     this.colsVisible = cols;
   },
 
-  "sizeElementsToWindow": function () {
-  
-  //If screen is in portrait mode, leave room for stats and status at the bottom
-  if (screenWidth > screenHeight) {
-  	$("body").style = "font-size: 2.2vw;";
-  } else {
-  	$("body").style = "font-size: 4vw;";
-  }
-  
-  let style = window.getComputedStyle(body, null).getPropertyValue('font-size');
-  let systemFontSize = parseFloat(style);
-  		let statsStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer) + "px;";
-  		$("stats").style = statsStyleUpdate;
-  		let statusStyleUpdate = "top: " + (systemFontSize * RAWS.settings.rows + buffer + 35) + "px;"; 
-  		$("status").style = statusStyleUpdate;
-  },
-
   "updateUIColor": function (element, palette) {
       if (element === BACKGROUND) {
           if (GAME.player.DETERIORATION < palette.length) {
-              bodyBackground = palette[GAME.player.DETERIORATION]; 
-              document.querySelector("body").style.background = bodyBackground;
+              bodyBackgroundColor = palette[GAME.player.DETERIORATION]; 
+              document.querySelector("body").style.background = bodyBackgroundColor;
           }
       } else if (element === TEXT) {
           if (GAME.player.LEECH < palette.length) {
@@ -463,7 +469,3 @@ const VIEW = {
 window.addEventListener("load", () => {
 
 });
-
-//window.addEventListener("resize", () => {
-//	sizeElementsToWindow();	
-//});

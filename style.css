@@ -12,74 +12,6 @@ body {
     touch-action: none;
 }
 
-#mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: black;
-    opacity: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-}
-.yellow {
-    color: yellow;
-}
-
-.red {
-    color: red;
-}
-
-#level {
-    opacity: .4;
-}
-
-#m {
-    color: red;
-}
-
-#\* {
-    color: yellow;
-}
-
-#\% {
-    color: green;
-}
-
-.background {
-    background-color: black;
-}
-
-.map {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-}
-.status {
-    color: grey;
-}
-#stats {
-    background-color: black;
-    font-size: .8em; 
-    display: inline;
-    position: absolute;
-    bottom:0;
-    left:0;
-    z-index:2;
-
-}
-
-#status {
-    background-color: black;
-    font-size: .8em; 
-    display: inline;
-    position: absolute;
-    bottom:5em;
-    left:0;
-}
-
 #aboutButton {
     background-color: black;
     color: yellow;
@@ -99,13 +31,63 @@ body {
     left: 0;
     width:100%;
     
-    font-size: .5em;
+    font-size: .7em;
     z-index: 2;
 }
 
-.block {
-    margin-left: auto;
-    margin-right: auto;
-    top: 10%;
-    width: 40em;
+.map {
+    position: absolute;
+    width: 50%;
+    height: 100%;
 }
+
+#level {
+    opacity: .4;
+}
+
+#mask {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: black;
+    opacity: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+}
+
+.background {
+    background-color: black;
+}
+
+#stats {
+    background-color: black;
+    font-size: .8em; 
+    display: inline;
+    position: absolute;
+    bottom:0;
+    z-index:2;
+}
+
+#status {
+    background-color: black;
+    font-size: .8em; 
+    display: inline;
+    position: absolute;
+    bottom:5em;
+    z-index: 2;
+}
+
+.status {
+    color: grey;
+}
+
+.yellow {
+    color: yellow;
+}
+
+.red {
+    color: red;
+}
+

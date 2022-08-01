@@ -903,7 +903,7 @@ const GAME = {
      }	
     }
     
-    VIEW.setMaskOpacity(.6);
+    VIEW.setMaskOpacity(VIEW.maskOpacity);
     this.maybeUpdateHighScores();
     
     let endString = "You died. ";
