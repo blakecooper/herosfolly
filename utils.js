@@ -93,4 +93,6 @@ const CONSTS = {
   "SPACE": "&nbsp",
   "BACKGROUND": 0,
   "TEXT": 1,
+  "MAP": 0,
+  "ENTITIES": 1
 }

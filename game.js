@@ -18,16 +18,16 @@ const GAME = {
               symbol: "O"
           };
 
-          if (!this.entityMatrix.isNullAt(door.x,door.y)
+          if (!this.entities.isNullAt(door.x,door.y)
           || (!(door.x === this.player.get("x") && door.y === this.player.get("y"))
-          && (this.entityMatrix.getIdAt(door.x,door.y) !== "potion"))) {
+          && (this.entities.getIdAt(door.x,door.y) !== "potion"))) {
             
-            if (!this.entityMatrix.isNullAt(door.x,door.y)
-            && this.entityMatrix.getMonstrosityAt(door.x,door.y)) {
+            if (!this.entities.isNullAt(door.x,door.y)
+            && this.entities.getMonstrosityAt(door.x,door.y)) {
               this.relocateMonsterAtIdx(this.getEnemyAt(door.x, door.y));
             }
               
-            this.entityMatrix.placeAt(door.x,door.y,door);
+            this.entities.placeAt(door.x,door.y,door);
           }  
         } 
       }
@@ -44,8 +44,8 @@ const GAME = {
   },
   
   checkForEntityWithIdAt: function (id, x, y) {
-    if (!this.entityMatrix.isNullAt(x, y)
-    && this.entityMatrix.getIdAt(x,y) === id) {
+    if (!this.entities.isNullAt(x, y)
+    && this.entities.getIdAt(x,y) === id) {
       return true;
     } 
     return false;
@@ -54,8 +54,8 @@ const GAME = {
   clearMonstersAroundPlayer: function() {
     for (let row = (this.player.get("x") - 1); row < (this.player.get("x") + 2); row++) {
       for (let col = (this.player.get("y") - 1); col < (this.player.get("y") + 2); col++) {
-        if (!this.entityMatrix.isNullAt(row,col) && 
-        this.entityMatrix.getPropOfEntityAt("isMonstrous", row, col)) {    
+        if (!this.entities.isNullAt(row,col) && 
+        this.entities.getPropOfEntityAt("isMonstrous", row, col)) {    
           this.relocateMonsterAtIdx(this.getEnemyAt(row, col));
         }
       }
@@ -65,7 +65,7 @@ const GAME = {
   cookies: document.cookie,
   
   despawnEnemyAt: function(x, y) {
-    this.entityMatrix.despawnEntityAt(x,y);
+    this.entities.despawnEntityAt(x,y);
     this.enemies[this.getEnemyAt(x,y)].x = 
     this.enemies[this.getEnemyAt(x,y)].y = -1;
   },
@@ -192,7 +192,7 @@ const GAME = {
   
   enemyTypes: getListOfEntitiesWhere("isMonstrous", true),
   
-  entityMatrix: [],
+  entities: [],
   
   getAcceptableCoordinateAsObjectWithParams: function (x1, x2, y1, y2) {
     let acceptable = false;
@@ -296,7 +296,7 @@ const GAME = {
     return retArr; 
   },
 
-  initEntityMatrix: (function () {
+  initEntities: (function () {
     let e = initializeMatrix(RAWS.settings.rows,RAWS.settings.cols,null);
 
     return {
@@ -473,14 +473,14 @@ const GAME = {
       this.pickupRestore();
     }
 
-    if (!this.entityMatrix.isNullAt(proposedMove.x,proposedMove.y)	//move through door 
-    && this.entityMatrix.getIdAt(proposedMove.x,proposedMove.y) === "door") {
+    if (!this.entities.isNullAt(proposedMove.x,proposedMove.y)	//move through door 
+    && this.entities.getIdAt(proposedMove.x,proposedMove.y) === "door") {
       this.newDimensionFrom(proposedMove.x, proposedMove.y);
       doorPresent = true;
     }
     
     if (!monsterPresent && !doorPresent) {		//despawn any entities
-      this.entityMatrix.despawnEntityAt(		//picked up by player
+      this.entities.despawnEntityAt(		//picked up by player
         proposedMove.x, 
         proposedMove.y); 
     } 
@@ -557,20 +557,20 @@ const GAME = {
   },
 
   movePlayerTo: function (x,y) {
-    this.entityMatrix.despawnEntityAt(
+    this.entities.despawnEntityAt(
       this.player.get("x"),
       this.player.get("y")
     );
-    this.entityMatrix.placeAt(x, y, this.player);
+    this.entities.placeAt(x, y, this.player);
     this.player.updateCoords(x, y);
   },
 
   moveEnemyTo: function (idx,x,y) {
     if (this.monsterNotDespawned(idx) 
     && this.map.at(x,y) === RAWS.map.text.floor 
-    && (this.entityMatrix.isNullAt(x,y) 
-      || this.entityMatrix.getIdAt(x,y) === "shard")) {
-      this.entityMatrix.despawnEntityAt(
+    && (this.entities.isNullAt(x,y) 
+      || this.entities.getIdAt(x,y) === "shard")) {
+      this.entities.despawnEntityAt(
         this.enemies[idx].x,
         this.enemies[idx].y
       );
@@ -579,7 +579,7 @@ const GAME = {
         this.enemies[idx].shards++;
       }
 
-      this.entityMatrix.placeAt(x,y, this.enemies[idx]);
+      this.entities.placeAt(x,y, this.enemies[idx]);
 		
       this.enemies[idx].x = x;
 	  this.enemies[idx].y = y;
@@ -587,8 +587,8 @@ const GAME = {
   }, 
 
   noEntitiesOnSquare: function (x, y) {
-    if (!this.entityMatrix.rowDefined(x) 
-    && !this.entityMatrix.isNullAt(x, y)) {
+    if (!this.entities.rowDefined(x) 
+    && !this.entities.isNullAt(x, y)) {
       return false;
     }
     return true;
@@ -596,7 +596,7 @@ const GAME = {
 
   newDimensionFrom: function (x, y) {
     this.dimension = RAWS.dimensions[			//determine which dimension
-      this.entityMatrix.getDimensionOfDoorAt(x, y)	//player stepped into
+      this.entities.getDimensionOfDoorAt(x, y)	//player stepped into
     ];
 
     this.doorsEntered++;
@@ -608,7 +608,7 @@ const GAME = {
     
     this.enemies = this.initEnemies();
 
-    this.entityMatrix.clear();
+    this.entities.clear();
     this.placeEntitiesOnMap();
   
     this.wasSeen = initializeMatrix(RAWS.settings.rows, RAWS.settings.cols, false);
@@ -660,7 +660,7 @@ const GAME = {
           }
           const dimColor = this.dimension.potionColor;		//render potions in the correct
           potion.render.color = dimColor;			//color for the current dimension
-          this.entityMatrix.placeAt(potion.x,potion.y, potion);
+          this.entities.placeAt(potion.x,potion.y, potion);
           
           this.voronoiSites.push({x: potion.x, y: potion.y});   //save info to use later
           this.potionZoneParams.push({				//to spawn other things near potions
@@ -731,9 +731,9 @@ const GAME = {
 	  this.voronoiSites[site].y, 
 	  this.voronoiDiagram
         )) {
-          if (this.entityMatrix.isNullAt(shard.x,shard.y)
-          || this.entityMatrix.getIdAt(shard.x,shard.y) !== "potion"){
-            this.entityMatrix.placeAt(shard.x,shard.y,shard);
+          if (this.entities.isNullAt(shard.x,shard.y)
+          || this.entities.getIdAt(shard.x,shard.y) !== "potion"){
+            this.entities.placeAt(shard.x,shard.y,shard);
           }
         } 
       }
@@ -749,11 +749,11 @@ const GAME = {
           ...this.getAcceptableCoordinateAsObject()
       }
   
-      this.entityMatrix.placeAt(restore.x,restore.y,restore);
+      this.entities.placeAt(restore.x,restore.y,restore);
     }
     
     for (let i = 0; i < this.enemies.length; i++) {			//spawn monsters
-      this.entityMatrix.placeAt(
+      this.entities.placeAt(
         this.enemies[i].x,
         this.enemies[i].y, 
         this.enemies[i]
@@ -820,14 +820,14 @@ const GAME = {
   
       if (this.map.at(x,y) === RAWS.map.text.floor 
       && this.noEntitiesOnSquare(x, y)) {
-        this.entityMatrix.despawnEntityAt(
+        this.entities.despawnEntityAt(
           this.enemies[i].x,
           this.enemies[i].y);
   
         this.enemies[i].x = x;
         this.enemies[i].y = y;
   
-        this.entityMatrix.placeAt(x,y,this.enemies[i]);
+        this.entities.placeAt(x,y,this.enemies[i]);
         acceptablePlacement = true;
       }
     }
@@ -838,7 +838,7 @@ const GAME = {
       VIEW.refreshScreen( 
         GAME.map,
         GAME.dimension,
-        GAME.entityMatrix, 
+        GAME.entities, 
         GAME.player.get("x"), 
         GAME.player.get("y")
       )}, 
@@ -874,7 +874,7 @@ const GAME = {
     if (!playerPlacementSuccessful) {
       console.log("Critical error: could not place player!");
     } else {
-      this.entityMatrix.placeAt(this.player.get("x"), this.player.get("y"), this.player);
+      this.entities.placeAt(this.player.get("x"), this.player.get("y"), this.player);
     }
   },
 
@@ -885,8 +885,8 @@ const GAME = {
     this.map = this.initMap; 
     this.player = this.initPlayer;
     this.enemies = this.initEnemies();
-    this.entityMatrix = this.initEntityMatrix;
-    this.entityMatrix.clear();
+    this.entities = this.initEntities;
+    this.entities.clear();
     this.placeEntitiesOnMap();
     this.spawnPlayer(); 
 
