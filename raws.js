@@ -12,6 +12,7 @@ const RAWS = {
     "WHITE": "white"
   },
   "settings": {
+    "chance_in_10_rooms_dont_spawn": 1,
     "is_seen_opacity": .9,
     "min_room_size": 4,
     "max_room_size": 9,

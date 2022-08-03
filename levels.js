@@ -17,32 +17,27 @@ let LEVEL = {
   addHallways: function (map, roomRows, roomCols) {
     for (let roomRow = 0; roomRow < roomRows; roomRow++) {
       for (let roomCol = 0; roomCol < roomCols; roomCol++) {
-            
+
         let statsIdx = (roomRow * roomCols) + roomCol;
 
-        if (this.roomStats[statsIdx].width !== null 
+        if (this.roomStats[statsIdx].width !== -1 
         && roomCol < roomCols - 1) {
           this.buildHallway(
-            CONSTS.HORIZONTAL, 
-            map, 
-            roomRow, 
-            roomRows, 
-            roomCol, 
-            roomCols,
+            CONSTS.HORIZONTAL,
+            map,
+            roomRow,
+            roomCol,
             statsIdx
           );
         }
 
-
-        if (this.roomStats[statsIdx].width !== null 
-        && roomRow < roomRows - 1) { 
+        if (this.roomStats[statsIdx].width !== -1
+        && roomRow < roomRows - 1) {
           this.buildHallway(
-            CONSTS.VERTICAL, 
-            map, 
-            roomRow, 
-            roomRows, 
-            roomCol, 
-            roomCols,
+            CONSTS.VERTICAL,
+            map,
+            roomRow,
+            roomCol,
             statsIdx
           );
         }
@@ -51,81 +46,82 @@ let LEVEL = {
     return map;
   },
 
-  buildHallway: function (mode, map, row, rowMax, col, colMax, statsIdx) {
+  buildHallway: function (mode, map, row, col, statsIdx) {
     let x = Math.floor(
       (this.roomStats[statsIdx].width + this.roomStats[statsIdx].rowOffset) / 2
     ) + (row * RAWS.settings.max_room_size);
-          
+
     let y = Math.floor(
       (this.roomStats[statsIdx].height + this.roomStats[statsIdx].colOffset) / 2
-    )+ (col * RAWS.settings.max_room_size);
+    ) + (col * RAWS.settings.max_room_size);
 
-    if (map[x][y] !== RAWS.map.text.wall) {
-      while (map[x][y] !== RAWS.map.text.wall 
-      && x < RAWS.settings.rows
-      && y < RAWS.settings.cols) {
-        
-        if (mode === CONSTS.HORIZONTAL) {
+    if (typeof map[x] !== 'undefined') {
+      if (map[x][y] !== RAWS.map.text.wall) {
+        while (map[x][y] !== RAWS.map.text.wall 
+        && x < RAWS.settings.rows
+        && y < RAWS.settings.cols) {
+
+          if (mode === CONSTS.HORIZONTAL) {
+            y++;
+          } else if (mode === CONSTS.VERTICAL) {
+            x++;
+          }
+        }
+      }
+
+      map[x][y] = RAWS.map.text.floor;
+
+      if (mode === CONSTS.HORIZONTAL) {
+        y++;
+      } else if (mode === CONSTS.VERTICAL) {
+        x++;
+      }
+
+      if (mode === CONSTS.HORIZONTAL) {
+        while(y < RAWS.settings.cols && map[x][y] !== RAWS.map.text.floor) {
+          map[x][y] = RAWS.map.text.floor;
+
+          if (x-1 > 0) {
+            map[x-1][y] = RAWS.map.text.wall;
+          }
+
+          if (x+1 < RAWS.settings.rows) {
+            map[x+1][y] = RAWS.map.text.wall;
+          }
+
           y++;
-        } else if (mode === CONSTS.VERTICAL) {
+        }
+      } else if (mode === CONSTS.VERTICAL) {
+        while (x < RAWS.settings.rows && map[x][y] !== RAWS.map.text.floor) {
+          map[x][y] = RAWS.map.text.floor;
+
+          if (y-1 > 0) {
+            map[x][y-1] = RAWS.map.text.wall;
+          }
+
+          if (y+1 < RAWS.settings.cols) {
+            map[x][y+1] = RAWS.map.text.wall;
+          }
+
           x++;
         }
       }
-    }
 
-    map[x][y] = RAWS.map.text.floor;
+      if (y === (RAWS.settings.cols)) {                //Edge cases: cap off
+        map[x][y-1] = RAWS.map.text.wall;              //hallways that go
+      }                                                //off the edge of the map
 
-    if (mode === CONSTS.HORIZONTAL) {
-      y++;
-    } else if (mode === CONSTS.VERTICAL) {
-      x++;
-    }
-
-    if (mode === CONSTS.HORIZONTAL) {
-      while(y < RAWS.settings.cols && map[x][y] !== RAWS.map.text.floor) {
-        map[x][y] = RAWS.map.text.floor;
-
-        if (x-1 > 0) {
-          map[x-1][y] = RAWS.map.text.wall;
-        }
-
-        if (x+1 < RAWS.settings.rows) {
-          map[x+1][y] = RAWS.map.text.wall;
-        }
-          
-        y++;
+      if (x === (RAWS.settings.rows)) {
+        map[x-1][y] = RAWS.map.text.wall;
       }
-    } else if (mode === CONSTS.VERTICAL) {
-      while (x < RAWS.settings.rows && map[x][y] !== RAWS.map.text.floor) {
-        map[x][y] = RAWS.map.text.floor;
-
-        if (y-1 > 0) {
-          map[x][y-1] = RAWS.map.text.wall;
-        }
-
-        if (y+1 < RAWS.settings.cols) {
-          map[x][y+1] = RAWS.map.text.wall;
-        }
-
-        x++;
-      }
-    }
-
-    //Edge case: a hallway leads off the edge of the map (cap it with a wall)
-    if (y === (RAWS.settings.cols)) {
-      map[x][y-1] = RAWS.map.text.wall;
-    }
-
-    if (x === (RAWS.settings.rows)) {
-      map[x-1][y] = RAWS.map.text.wall;
     }
   },
-    
+
   generate: function () {
 
     let map = initializeMatrix(
-      RAWS.settings.rows, 
-      RAWS.settings.cols, 
+      RAWS.settings.rows,
+      RAWS.settings.cols,
       CONSTS.SPACE
     );
 
@@ -137,41 +133,42 @@ let LEVEL = {
     for (let roomRow = 0; roomRow < roomRows; roomRow++) {
       for (let roomCol = 0; roomCol < roomCols; roomCol++) {
 
-//        if (random(10) > 1){
-            
-          let room = this.generateRoom();
-  
+        let room = this.generateRoom();
+
+        if (random(10) > RAWS.settings.chance_in_10_rooms_dont_spawn){
+
           let rowOffset = random(                                    //determines how far from
             RAWS.settings.max_room_size - room.length                //the edges of the zone
           );                                                         //the room is placed
-          
+
           let colOffset = random(
             RAWS.settings.max_room_size - room[0].length
           );
-  
+
           this.roomStats.push({                                      //store room gen data
             width: room.length,                                      //for connecting hallways
             height: room[0].length,
             rowOffset: rowOffset,
             colOffset: colOffset
           });
-  
-//        } else {
-//          this.roomStats.push({
-//            width: null,
-//            height: null,
-//            rowOffset: null,
-//            colOffset: null
-//          });
-//        }
-  
-        
-        if (typeof room !== 'undefined' && room !== null) {
+
+        } else {
+          this.roomStats.push({
+            width: -1,
+            height: -1,
+            rowOffset: -1,
+            colOffset: -1
+          });
+        }  
+
+        if (this.roomStats[this.roomStats.length - 1].width !== -1) {
           for (let row = 0; row < room.length; row++) {            //add room to map
             for (let col = 0; col < room[0].length; col++) {
               map
-              [(RAWS.settings.max_room_size * roomRow) + rowOffset + row]
-              [(RAWS.settings.max_room_size * roomCol) + colOffset + col] 
+              [(RAWS.settings.max_room_size * roomRow) 
+                + this.roomStats[this.roomStats.length - 1].rowOffset + row]
+              [(RAWS.settings.max_room_size * roomCol) 
+                + this.roomStats[this.roomStats.length - 1].colOffset + col] 
               = room[row][col];
             }
           }
@@ -190,9 +187,9 @@ let LEVEL = {
       );
 
       this.roomStats.push({
-        width: room.length, 
-        height: room[0].length, 
-        rowOffset: rowOffset, 
+        width: room.length,
+        height: room[0].length,
+        rowOffset: rowOffset,
         colOffset: colOffset
       });
 
@@ -202,11 +199,11 @@ let LEVEL = {
         }
       }
     }
- 
+
     return this.addBorder(                                    //generate hallways,
       this.addHallways(                                       //enclose the map with
         map,                                                  //a border and return
-        roomRows, 
+        roomRows,
         roomCols
       )
     );
@@ -223,9 +220,9 @@ let LEVEL = {
 
     for (let row = 0; row < room.length; row++) {
       for (let col = 0; col < room[0].length; col++) {
-        if (row === 0 
-        || col === 0 
-        || row === room.length - 1 
+        if (row === 0
+        || col === 0
+        || row === room.length - 1
         || col === room[0].length - 1) {
           room[row][col] = RAWS.map.text.wall;                                  //wall it off
         }

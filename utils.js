@@ -94,5 +94,7 @@ const CONSTS = {
   "BACKGROUND": 0,
   "TEXT": 1,
   "MAP": 0,
-  "ENTITIES": 1
+  "ENTITIES": 1,
+  "HORIZONTAL": 1,
+  "VERTICAL": 0
 }
