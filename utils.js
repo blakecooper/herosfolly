@@ -97,4 +97,4 @@ const CONSTS = {
   "ENTITIES": 1,
   "HORIZONTAL": 1,
   "VERTICAL": 0
-}
+};
