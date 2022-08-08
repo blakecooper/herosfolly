@@ -1,7 +1,7 @@
 const GAME = {
   appearDoors: function () {
     for (dimension in RAWS.dimensions) {
-      if (RAWS.dimensions[dimension] !== this.dimension) {	//only spawn doors
+      if (RAWS.dimensions[dimension] !== this.currentDimension) {	//only spawn doors
         const numberDoors = RAWS.settings.base_spawn_rate	//to other dimensions
         * RAWS.entities.door.spawnRate;
           
@@ -63,7 +63,9 @@ const GAME = {
   },
 
   cookies: document.cookie,
-  
+
+  currentDimension: RAWS.dimensions.hp, //game always starts in hp dimension
+
   despawnEnemyAt: function(x, y) {
     this.entities.despawnEntityAt(x,y);
     this.enemies[this.getEnemyAt(x,y)].x = 
@@ -160,10 +162,10 @@ const GAME = {
     };
   },
 
-  dimension: RAWS.dimensions.hp, //game always starts in hp dimension
-  
+  dimensions: RAWS.dimensions,
+
   doorsEntered: 0,
-  
+
   doorsNotAppeared: true,
 
   enemies: [],
@@ -171,7 +173,7 @@ const GAME = {
   enemyAttacks: function (attacker) {
     const totalAttack = (random(20)
     * (1 + (this.doorsEntered * .2))) 				    //buff enemies more in successive dimensions
-    + (this.dimension.id === "atk" ? (this.doorsEntered * .2) : 0); //+1 to atk in atk dimensions
+    + (this.currentDimension.id === "atk" ? (this.doorsEntered * .2) : 0); //+1 to atk in atk dimensions
  
     if (totalAttack > this.player.get("def")) {
       const damage = Math.floor(attacker.atk/2	//half of damage is guaranteed
@@ -516,7 +518,7 @@ const GAME = {
     }
  
     if (this.shardsCollectedOnLevel 			//open dimension doors if
-      === RAWS.settings.shards_required_to_advance	//enough shards collected
+      === this.shardsRequiredToAdvance	//enough shards collected
     && this.doorsNotAppeared) {
         this.appearDoors();
         VIEW.drawStatus("The shards have opened doors to other dimensions!");
@@ -595,8 +597,8 @@ const GAME = {
   },
 
   newDimensionFrom: function (x, y) {
-    this.dimension = RAWS.dimensions[			//determine which dimension
-      this.entities.getDimensionOfDoorAt(x, y)	//player stepped into
+    this.currentDimension = RAWS.dimensions[            //determine which dimension
+     this.entities.getDimensionOfDoorAt(x, y)           //player stepped into
     ];
 
     this.doorsEntered++;
@@ -618,7 +620,7 @@ const GAME = {
   
   pickupPotion: function () {
     this.potionsCollected++;
-    this.dimension.potionEffect();
+    this.currentDimension.potionEffect();
     if (this.potionsCollected === RAWS.settings.potions_per_level) {
         VIEW.drawStatus("There are no more potions... in this realm.");
     }
@@ -658,7 +660,7 @@ const GAME = {
                 ((zoneWidth * col) + (zoneWidth-1))
               )
           }
-          const dimColor = this.dimension.potionColor;		//render potions in the correct
+          const dimColor = this.currentDimension.potionColor;		//render potions in the correct
           potion.render.color = dimColor;			//color for the current dimension
           this.entities.placeAt(potion.x,potion.y, potion);
           
@@ -770,7 +772,7 @@ const GAME = {
       
       const totalDefense = (defender.def
       * (1 + this.doorsEntered * .2))           //buff enemies more in successive dimensions
-      + (this.dimension.id === "def" ? 1 : 0);  //+1 to def in def dimensions 
+      + (this.currentDimension.id === "def" ? 1 : 0);  //+1 to def in def dimensions 
 
       const totalAttack = random(20)
       + (this.player.get("atk") - RAWS.entities.player.atk); //roll d20, add atk - base atk
@@ -833,11 +835,13 @@ const GAME = {
     }
   },
 
+  shardsRequiredToAdvance: -1,
+
   startView: function () {
     let interval = setInterval(function() {
       VIEW.refreshScreen( 
         GAME.map,
-        GAME.dimension,
+        GAME.currentDimension,
         GAME.entities, 
         GAME.player.get("x"), 
         GAME.player.get("y")

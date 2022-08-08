@@ -58,8 +58,8 @@ let LEVEL = {
     if (typeof map[x] !== 'undefined') {
       if (map[x][y] !== RAWS.map.text.wall) {
         while (map[x][y] !== RAWS.map.text.wall 
-        && x < RAWS.settings.rows
-        && y < RAWS.settings.cols) {
+        && x < RAWS.settings.rows - 1
+        && y < RAWS.settings.cols - 1) {
 
           if (mode === CONSTS.HORIZONTAL) {
             y++;

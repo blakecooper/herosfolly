@@ -5,25 +5,31 @@ const CONTROLLER = {
       document.addEventListener('keydown', onKeyHandler);
       document.addEventListener('touchstart', handleTouchStart);        
       document.addEventListener('touchmove', handleTouchMove);
-      
+
       function onKeyHandler(e) {
-    	for (key in RAWS.settings.keymap) {
-    	  if (e.keyCode === parseInt(key)) {
+        for (key in RAWS.settings.keymap) {
+          if (e.keyCode === parseInt(key)) {
             document.removeEventListener('keydown', onKeyHandler);
-    	    keyPressed = e.keyCode;
-    	    resolve();
-    	  }
+            keyPressed = e.keyCode;
+            resolve();
+          }
         }
       }
 
-      let xDown = null;                                                        	
+      /* Code below for touchscreen support adapted from 
+       * code written by Gaston Silva: https://stackoverflow.com
+       * /questions/2264072/detect-a-finger-swipe-through-javascript
+       * -on-the-iphone-and-android
+       */
+
+      let xDown = null;
       let yDown = null;
-    
+
       function getTouches(evt) {
-      	return evt.touches ||             // browser API
-        evt.originalEvent.touches; 	  // jQuery
-      }                                                     
-                                                                             
+        return evt.touches ||             // browser API
+        evt.originalEvent.touches;        // jQuery
+      }
+
       function handleTouchStart(evt) {
         const firstTouch = getTouches(evt)[0];                                      
         xDown = firstTouch.clientX;                                     
