@@ -12,6 +12,7 @@ const RAWS = {
     "WHITE": "white"
   },
   "settings": {
+    "chance_in_10_rooms_dont_spawn": 0,
     "is_seen_opacity": .9,
     "min_room_size": 4,
     "max_room_size": 9,
@@ -39,7 +40,6 @@ const RAWS = {
        "98": CONSTS.DOWN,
        "99": CONSTS.DOWNRIGHT,
        "100": CONSTS.LEFT,
-       "101": CONSTS.WAIT,
        "102": CONSTS.RIGHT,
        "103": CONSTS.UPLEFT,
        "104": CONSTS.UP,
@@ -140,7 +140,7 @@ const RAWS = {
           consumer.shards++;
         }
       },
-      "spawnRate": 1
+      "spawnRate": 2.5
     },
     "restore": {
       "id": "restore",

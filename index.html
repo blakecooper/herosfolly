@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <script src="utils.js"></script>
   <script src="voronoi.js"></script>
-  <script src="consts.js"></script>
   <script src="raws.js"></script>
   <script src="view.js"></script>
   <script src="controller.js"></script>
@@ -15,12 +14,13 @@
   <title>Shards of Maxion</title>
  </head>
  <body id="body" onload="GAME.start()">
+  <div class="center" id="container">
    <div id="aboutButton" onclick="VIEW.displayAbout()">[*]</div>
    <div id="about"></div>
-  <div class="center" id="container">
-   <div class="map" id="level"></div>
+   <div class="map" id="map"></div>
    <div class="map" id="entities"></div>
    <div class="map" id="hive"></div>
+   <div class="map" id="mask">&nbsp</div>
    <div class="background" id="stats"></div>
    <div class="background" id="status">
     <span class="status" id="status4"></span>
