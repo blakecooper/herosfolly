@@ -84,8 +84,8 @@ const VIEW = {
       this.mapDisplay.rowMax = this.rowsVisible; 
     } else {
       this.mapDisplay.rowMax = 
-        (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows 
-        ? x+Math.ceil(this.rowsVisible/2) :  (RAWS.settings.rows - 1);
+        (x + Math.ceil(this.rowsVisible/2)) < RAWS.settings.rows
+        ? x+ Math.ceil(this.rowsVisible/2) : (RAWS.settings.rows - 1);
     }
 
     if (this.mapDisplay.col === 0) { 
@@ -139,7 +139,8 @@ const VIEW = {
         } else if (mode === CONSTS.MAP	//mode 2: map drawing
         && (matrix.rowsAreDefined 
         && matrix.at(row,col) !== null
-        && GAME.wasSeen[row][col])) {
+        && GAME.wasSeen[row][col])
+        ) {
           html += matrix.at(row,col);
         } else {
           html += CONSTS.SPACE;
@@ -259,12 +260,15 @@ const VIEW = {
     rows /= 3;		//necessary because font is not square
 
     let cols = Math.floor(
-      screenWidth/(origFont) *RAWS.settings.default_font_size);
+      screenWidth/(origFont) * RAWS.settings.default_font_size);
 
-    $('body').style.fontSize =RAWS.settings.default_font_size + "em";
+    $('body').style.fontSize = RAWS.settings.default_font_size + "em";
 
     this.rowsVisible = rows;
     this.colsVisible = cols;
+    
+    console.log(this.rowsVisible);
+    console.log(this.colsVisible);
   },
 
   "setMaskOpacity": function (a) {

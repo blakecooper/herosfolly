@@ -37,8 +37,6 @@ body {
 
 .map {
     position: absolute;
-    width: 50%;
-    height: 50%;
 }
 
 #map {

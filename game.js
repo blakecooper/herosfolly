@@ -886,7 +886,8 @@ const GAME = {
 
     VIEW.checkForMobileDevice();
 
-    this.map = this.initMap; 
+    this.map = this.initMap;
+ 
     this.player = this.initPlayer;
     this.enemies = this.initEnemies();
     this.entities = this.initEntities;
