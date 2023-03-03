@@ -565,6 +565,7 @@ const GAME = {
     );
     this.entities.placeAt(x, y, this.player);
     this.player.updateCoords(x, y);
+    console.log("x: " + x + " y: " + y);
   },
 
   moveEnemyTo: function (idx,x,y) {
@@ -835,7 +836,7 @@ const GAME = {
     }
   },
 
-  shardsRequiredToAdvance: -1,
+  shardsRequiredToAdvance: RAWS.settings.shards_required_to_advance,
 
   startView: function () {
     let interval = setInterval(function() {
