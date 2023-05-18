@@ -78,6 +78,7 @@ body {
     position: absolute;
     bottom:5em;
     z-index: 2;
+    width: 30%;
 }
 
 .status {
