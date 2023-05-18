@@ -901,6 +901,8 @@ const GAME = {
     this.highscore = this.getHighScores(); 
     this.startView();
 
+    VIEW.drawStatus(RAWS.text.start);
+
     while (this.play) {
       await CONTROLLER.waitingKeypress();
    

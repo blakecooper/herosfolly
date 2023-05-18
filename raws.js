@@ -11,6 +11,9 @@ const RAWS = {
     "ORANGE": "brown",
     "WHITE": "white"
   },
+  "text": {
+    "start": "And thus Fate spoke: 'Commence the Hero's Folly! Collect the shards and prepare to face primordial Evil from dimensions far beyond! Go forth!'"
+  },
   "settings": {
     "chance_in_10_rooms_dont_spawn": 0,
     "is_seen_opacity": .9,
