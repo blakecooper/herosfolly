@@ -237,27 +237,11 @@ const GAME = {
   },
 
   getHighScores: function () {
-    const key = "highscores=";
-    let score = "";
-
-    if (this.cookies.length > 0 
-    && this.cookies.search(key) !== -1) {
-      let highscoresString = this.cookies.substring(
-        this.cookies.search(key) 
-        + key.length
-      );
-      let idx = 0;
-
-      while (idx < this.cookies.length 
-      && highscoresString[idx] !== ";") {
-        score += highscoresString[idx];
-        idx++;
-      }
-
-      return parseInt(score);
-    } else {
-      return 0;
+    if (!localStorage.getItem("highScore")) {
+      localStorage.setItem("highScore", 0);
     }
+    
+    return localStorage.getItem("highScore");
   },
 
   getRandomCoordinateWithParams: function(axis, limit) {
@@ -536,11 +520,7 @@ const GAME = {
       this.highscore = this.player.get("shards");
       this.isNewHighScore = true;
     }
-    document.cookie = 			//this code will need to
-      "highscores=" 			//change if we ever store
-      + this.highscore 			//more than just the high score
-      + "; SameSite=Strict;";		//in cookies
-
+    localStorage.setItem("highScore", this.highscore)
   },
 
   monsterNotDespawned: function(idx) {
