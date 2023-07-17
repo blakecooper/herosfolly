@@ -3,7 +3,7 @@ const VIEW = {
 
   "bodyBackgroundColor": "black",
 
-  "copyright": "Copyright (c) 2022 Blake Cooper",
+  "copyright": "Copyright (c) 2023 Blake Cooper",
 
   "checkForMobileDevice": function () {
     window.addEventListener("load", () => {
@@ -58,7 +58,8 @@ const VIEW = {
         "<p>" + this.title +
         "<p>" + this.copyright + 
         "<p>" + this.instructions +
-        "<p>" + this.license;
+        "<p>" + this.license +
+        "<p><a href='#' onclick='GAME.resetHighScore()'>Reset high score</a>";
 
       $("about").innerHTML = html;
       $("about").style = "display: inline;";

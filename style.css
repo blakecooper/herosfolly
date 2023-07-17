@@ -5,6 +5,10 @@ body {
     overflow: hidden;
 }
 
+a {
+    color: white;
+}
+
 .center {
     margin: auto; 
     -webkit-user-select:none; 
