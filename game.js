@@ -816,6 +816,14 @@ const GAME = {
     }
   },
 
+  resetHighScore: function (i) {
+    localStorage.setItem("highScore", 0);
+    this.highscore = this.getHighScores();
+    if (VIEW.aboutDisplayed) {
+      VIEW.displayAbout();
+    }
+  },
+
   shardsRequiredToAdvance: RAWS.settings.shards_required_to_advance,
 
   startView: function () {
@@ -887,7 +895,11 @@ const GAME = {
       await CONTROLLER.waitingKeypress();
    
       if (keyPressed > 0) {
-       GAME.loop();
+       if (keyPressed == 27) { //27 = ESC
+        VIEW.displayAbout();
+       } else {
+        GAME.loop();
+       }
      }	
     }
     

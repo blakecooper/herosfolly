@@ -75,6 +75,7 @@ function isInVoronoiCell(x, y, siteX, siteY, voronoi) {
 }
 //Warning": changing these may cause undefined behavior!
 const CONSTS = {
+  "ESCAPE": 9,
   "LEFT": 0,
   "RIGHT": 1,
   "DOWN": 2,

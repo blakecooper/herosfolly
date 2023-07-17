@@ -26,6 +26,7 @@ const RAWS = {
     "base_spawn_rate": 600,
     "shards_required_to_advance": 50,
     "keymap": {
+       "27": CONSTS.ESCAPE,
        "37": CONSTS.LEFT,
        "38": CONSTS.UP,
        "39": CONSTS.RIGHT,
