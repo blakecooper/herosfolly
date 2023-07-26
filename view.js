@@ -246,18 +246,11 @@ const VIEW = {
   "setDisplaySize": function () {
     let screenWidth = window.innerWidth;
     let screenHeight = window.innerHeight;
-
-    let origFont = window.getComputedStyle(document.body).getPropertyValue('font-size');
-    let idx = 0;
-
-    while(origFont[idx] !== 'p') {
-        idx++;
-    }
-
-    origFont = origFont.substring(0,idx);
-
+    
+    const origFont = parseInt(window.getComputedStyle(document.documentElement).fontSize);
+    
     let rows = Math.floor(
-      screenHeight/(origFont)*RAWS.settings.default_font_size);
+      screenHeight/(origFont) * RAWS.settings.default_font_size);
     rows /= 3;		//necessary because font is not square
 
     let cols = Math.floor(
